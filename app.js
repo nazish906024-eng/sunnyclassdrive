@@ -173,8 +173,8 @@ function installAuthUI() {
     catch (error) { message(error.message || "Google sign-in failed."); }
   });
   $("sendOtp").addEventListener("click", async () => {
-    const phone = $("phoneNumber").value.trim().replace(/[\\s()-]/g, "");
-    if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) { message("Enter a valid phone number with country code, e.g. +91 9876543210."); return; }
+    const phone = $("phoneNumber").value.trim().replace(/[\s()-]/g, "");
+    if (!/^\+[1-9]\d{7,14}$/.test(phone)) { message("Enter a valid phone number with country code, e.g. +91 9876543210."); return; }
     $("sendOtp").disabled = true; message("Preparing secure verification…");
     try {
       if (!recaptchaVerifier) recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
@@ -188,7 +188,7 @@ function installAuthUI() {
   });
   $("verifyOtp").addEventListener("click", async () => {
     const code = $("otpCode").value.trim();
-    if (!confirmationResult || !/^\\d{6}$/.test(code)) { message("Enter the 6-digit verification code."); return; }
+    if (!confirmationResult || !/^\d{6}$/.test(code)) { message("Enter the 6-digit verification code."); return; }
     try { await confirmationResult.confirm(code); $("authForm").hidden = true; toast("Phone number verified. Signed in."); }
     catch (error) { message(error.message || "OTP verification failed."); }
   });
