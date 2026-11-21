@@ -3,9 +3,7 @@
 // 2) Keep the Firebase project in test/development only until rules are reviewed.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -30,7 +28,9 @@ const fileList = $("fileList");
 const toastEl = $("toast");
 let allFiles = [];
 let activeFilter = "all";
-let db, storage;
+let db, auth, currentUser = null;
+const SUPABASE_URL = "https://vwewwowlpaqdtutyniou.supabase.co";
+const EDGE_UPLOAD_URL = SUPABASE_URL + "/functions/v1/upload-file";
 
 function toast(message) {
   toastEl.textContent = message;
@@ -108,54 +108,33 @@ function renderFiles() {
   }).join("");
 }
 async function uploadOne(file) {
+  if (!currentUser) throw new Error("Please sign in before uploading.");
   const ext = extension(file.name);
-  if (!ALLOWED_EXTENSIONS.has(ext)) throw new Error(`${file.name}: file type not supported.`);
-  if (file.size > MAX_FILE_SIZE) throw new Error(`${file.name}: larger than 25 MB.`);
-  if (file.size === 0) throw new Error(`${file.name}: empty files cannot be uploaded.`);
-
+  if (!ALLOWED_EXTENSIONS.has(ext)) throw new Error(file.name + ": file type not supported.");
+  if (file.size > MAX_FILE_SIZE) throw new Error(file.name + ": larger than 25 MB.");
+  if (!file.size) throw new Error(file.name + ": empty files cannot be uploaded.");
   const safeName = file.name.replace(/[^\w.\-() ]/g, "_").slice(0, 100);
-  const uniqueName = `${Date.now()}_${crypto.randomUUID()}_${safeName}`;
-  const path = `school-files/${uniqueName}`;
-  const objectRef = storageRef(storage, path);
-  const progressBox = $("uploadProgress");
-  progressBox.hidden = false;
-  $("progressTitle").textContent = `Uploading ${file.name}`;
+  const token = await currentUser.getIdToken();
+  $("uploadProgress").hidden = false;
+  $("progressTitle").textContent = "Uploading " + file.name;
   $("progressDetail").textContent = "Please keep this page open.";
-  $("progressPercent").textContent = "0%";
+  $("progressPercent").textContent = "Uploading…";
   $("progressBar").style.width = "0%";
-
-  await new Promise((resolve, reject) => {
-    const task = uploadBytesResumable(objectRef, file, {
-      contentType: file.type || "application/octet-stream",
-      customMetadata: { originalName: safeName }
-    });
-    task.on("state_changed",
-      snapshot => {
-        const percent = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100);
-        $("progressPercent").textContent = `${percent}%`;
-        $("progressBar").style.width = `${percent}%`;
-      },
-      reject,
-      async () => {
-        try {
-          const downloadURL = await getDownloadURL(task.snapshot.ref);
-          await addDoc(collection(db, "schoolFiles"), {
-            name: safeName,
-            originalName: safeName,
-            storagePath: path,
-            downloadURL,
-            size: file.size,
-            contentType: file.type || "application/octet-stream",
-            createdAt: serverTimestamp()
-          });
-          resolve();
-        } catch (error) { reject(error); }
-      }
-    );
+  const response = await fetch(EDGE_UPLOAD_URL, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token, "Content-Type": file.type || "application/octet-stream", "X-File-Name": encodeURIComponent(safeName) },
+    body: file
   });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "Upload failed (" + response.status + ").");
+  if (!result.path || !result.publicUrl) throw new Error("Upload service returned an incomplete response.");
+  $("progressPercent").textContent = "100%";
+  $("progressBar").style.width = "100%";
+  await addDoc(collection(db, "schoolFiles"), { name: safeName, originalName: safeName, storagePath: result.path, downloadURL: result.publicUrl, size: file.size, contentType: file.type || "application/octet-stream", uploadedBy: currentUser.uid, createdAt: serverTimestamp() });
 }
 async function handleFiles(files) {
   if (!files?.length) return;
+  if (!currentUser) { toast("Please sign in to upload files."); return; }
   if (!configReady()) {
     toast("First add your Firebase configuration in app.js.");
     return;
@@ -172,6 +151,30 @@ async function handleFiles(files) {
   $("uploadProgress").hidden = true;
   $("fileInput").value = "";
 }
+function installAuthUI() {
+  document.querySelector(".topbar").insertAdjacentHTML("afterend",
+    '<section class="auth-panel" id="authPanel"></section><form class="auth-form" id="authForm" hidden><strong>Uploader account</strong><label>Email<input id="authEmail" type="email" required autocomplete="username"></label><label>Password<input id="authPassword" type="password" minlength="6" required autocomplete="current-password"></label><button class="primary-btn" id="authSubmit" type="submit">Sign in</button><button class="auth-action" id="toggleAuth" type="button">Create account</button><button class="auth-action" id="resetPassword" type="button">Forgot password?</button><button class="auth-action" id="closeAuth" type="button">Close</button><p id="authMessage"></p></form>');
+  let register = false;
+  $("toggleAuth").addEventListener("click", () => { register = !register; $("authSubmit").textContent = register ? "Create account" : "Sign in"; $("toggleAuth").textContent = register ? "I already have an account" : "Create account"; });
+  $("closeAuth").addEventListener("click", () => { $("authForm").hidden = true; });
+  $("authForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const email = $("authEmail").value.trim(), password = $("authPassword").value;
+    $("authMessage").textContent = "Please wait…";
+    try {
+      if (register) await createUserWithEmailAndPassword(auth, email, password);
+      else await signInWithEmailAndPassword(auth, email, password);
+      $("authForm").hidden = true; toast("Signed in successfully.");
+    } catch (error) { $("authMessage").textContent = error.message; }
+  });
+  $("resetPassword").addEventListener("click", async () => {
+    const email = $("authEmail").value.trim();
+    if (!email) { $("authMessage").textContent = "Enter your email first."; return; }
+    try { await sendPasswordResetEmail(auth, email); $("authMessage").textContent = "Password reset email sent."; }
+    catch (error) { $("authMessage").textContent = error.message; }
+  });
+}
+
 function connectFirebase() {
   if (!configReady()) {
     fileList.innerHTML = `<div class="empty-state"><div>☁</div><h3>Firebase setup required</h3><p>Follow SETUP.md and add your Firebase web config in app.js.</p></div>`;
@@ -183,7 +186,23 @@ function connectFirebase() {
   try {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
-    storage = getStorage(app);
+    auth = getAuth(app);
+    installAuthUI();
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+      const panel = $("authPanel");
+      if (user) {
+        panel.innerHTML = '<div class="auth-status">Signed in as <strong>' + safeText(user.email || "Uploader") + '</strong><button class="auth-action" id="signOutBtn">Sign out</button></div>';
+        $("dropZone").hidden = false;
+        $("uploadTopBtn").hidden = false;
+        $("signOutBtn").addEventListener("click", () => signOut(auth).catch(error => toast(error.message)));
+      } else {
+        panel.innerHTML = '<div class="auth-status">Sign in to upload. Anyone can browse and download.<button class="auth-action" id="showAuthBtn">Sign in / Register</button></div>';
+        $("dropZone").hidden = true;
+        $("uploadTopBtn").hidden = true;
+        $("showAuthBtn").addEventListener("click", () => { $("authForm").hidden = false; });
+      }
+    });
     const filesQuery = query(collection(db, "schoolFiles"), orderBy("createdAt", "desc"));
     onSnapshot(filesQuery, snapshot => {
       allFiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -199,8 +218,8 @@ function connectFirebase() {
   }
 }
 
-$("browseBtn").addEventListener("click", () => $("fileInput").click());
-$("uploadTopBtn").addEventListener("click", () => $("fileInput").click());
+$("browseBtn").addEventListener("click", () => currentUser ? $("fileInput").click() : toast("Please sign in to upload."));
+$("uploadTopBtn").addEventListener("click", () => currentUser ? $("fileInput").click() : toast("Please sign in to upload."));
 $("fileInput").addEventListener("change", event => handleFiles(event.target.files));
 $("searchInput").addEventListener("input", renderFiles);
 $("sortSelect").addEventListener("change", renderFiles);
