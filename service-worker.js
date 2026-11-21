@@ -1,21 +1,23 @@
-const CACHE_NAME = "sunnyclassdrive-shell-v2";
+const CACHE_NAME = "sunnyclassdrive-shell-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css",
   "./app.js",
   "./manifest.webmanifest",
-  "./icons/icon.svg",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icon.svg"
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    // Cache each resource separately so one missing file cannot cancel installation.
+    await Promise.all(APP_SHELL.map(async path => {
+      try { await cache.add(path); }
+      catch (error) { console.warn("Could not cache:", path, error); }
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", event => {
@@ -33,8 +35,10 @@ self.addEventListener("fetch", event => {
 
   event.respondWith(
     fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      }
       return response;
     }).catch(() => caches.match(request).then(cached => cached || caches.match("./index.html")))
   );
