@@ -3,7 +3,7 @@
 // 2) Keep the Firebase project in test/development only until rules are reviewed.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -153,28 +153,64 @@ async function handleFiles(files) {
 }
 function installAuthUI() {
   document.querySelector(".topbar").insertAdjacentHTML("afterend",
-    '<section class="auth-panel" id="authPanel"></section><form class="auth-form" id="authForm" hidden><strong>Uploader account</strong><label>Email<input id="authEmail" type="email" required autocomplete="username"></label><label>Password<input id="authPassword" type="password" minlength="6" required autocomplete="current-password"></label><button class="primary-btn" id="authSubmit" type="submit">Sign in</button><button class="auth-action" id="toggleAuth" type="button">Create account</button><button class="auth-action" id="resetPassword" type="button">Forgot password?</button><button class="auth-action" id="closeAuth" type="button">Close</button><p id="authMessage"></p></form>');
-  let register = false;
+    '<section class="auth-panel" id="authPanel"></section>' +
+    '<div class="auth-form" id="authForm" hidden>' +
+    '<strong>Uploader account</strong>' +
+    '<button class="auth-action auth-wide" id="googleSignIn" type="button">Continue with Google</button>' +
+    '<div class="auth-divider">OR</div>' +
+    '<label>Phone number<input id="phoneNumber" type="tel" inputmode="tel" placeholder="+91 9876543210" autocomplete="tel"></label>' +
+    '<div id="recaptcha-container"></div>' +
+    '<button class="auth-action auth-wide" id="sendOtp" type="button">Send OTP</button>' +
+    '<div id="otpArea" hidden><label>Verification code<input id="otpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP"></label><button class="primary-btn" id="verifyOtp" type="button">Verify &amp; sign in</button></div>' +
+    '<details class="email-login"><summary>Use email and password instead</summary>' +
+    '<form id="emailAuthForm"><label>Email<input id="authEmail" type="email" required autocomplete="username"></label><label>Password<input id="authPassword" type="password" minlength="6" required autocomplete="current-password"></label><button class="primary-btn" id="authSubmit" type="submit">Sign in</button><button class="auth-action" id="toggleAuth" type="button">Create account</button><button class="auth-action" id="resetPassword" type="button">Forgot password?</button></form></details>' +
+    '<button class="auth-action" id="closeAuth" type="button">Close</button><p id="authMessage" aria-live="polite"></p></div>');
+  let register = false, confirmationResult = null, recaptchaVerifier = null;
+  const message = text => { $("authMessage").textContent = text; };
+  $("googleSignIn").addEventListener("click", async () => {
+    message("Opening Google sign-in…");
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); $("authForm").hidden = true; toast("Signed in with Google."); }
+    catch (error) { message(error.message || "Google sign-in failed."); }
+  });
+  $("sendOtp").addEventListener("click", async () => {
+    const phone = $("phoneNumber").value.trim().replace(/[\\s()-]/g, "");
+    if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) { message("Enter a valid phone number with country code, e.g. +91 9876543210."); return; }
+    $("sendOtp").disabled = true; message("Preparing secure verification…");
+    try {
+      if (!recaptchaVerifier) recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+      confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
+      $("otpArea").hidden = false;
+      message("OTP sent. Check your phone and enter the code.");
+    } catch (error) {
+      message(error.message || "Could not send OTP. Check Firebase Phone sign-in settings.");
+      if (recaptchaVerifier) { try { await recaptchaVerifier.clear(); } catch (_) {} recaptchaVerifier = null; }
+    } finally { $("sendOtp").disabled = false; }
+  });
+  $("verifyOtp").addEventListener("click", async () => {
+    const code = $("otpCode").value.trim();
+    if (!confirmationResult || !/^\\d{6}$/.test(code)) { message("Enter the 6-digit verification code."); return; }
+    try { await confirmationResult.confirm(code); $("authForm").hidden = true; toast("Phone number verified. Signed in."); }
+    catch (error) { message(error.message || "OTP verification failed."); }
+  });
   $("toggleAuth").addEventListener("click", () => { register = !register; $("authSubmit").textContent = register ? "Create account" : "Sign in"; $("toggleAuth").textContent = register ? "I already have an account" : "Create account"; });
   $("closeAuth").addEventListener("click", () => { $("authForm").hidden = true; });
-  $("authForm").addEventListener("submit", async event => {
+  $("emailAuthForm").addEventListener("submit", async event => {
     event.preventDefault();
     const email = $("authEmail").value.trim(), password = $("authPassword").value;
-    $("authMessage").textContent = "Please wait…";
+    message("Please wait…");
     try {
       if (register) await createUserWithEmailAndPassword(auth, email, password);
       else await signInWithEmailAndPassword(auth, email, password);
       $("authForm").hidden = true; toast("Signed in successfully.");
-    } catch (error) { $("authMessage").textContent = error.message; }
+    } catch (error) { message(error.message); }
   });
   $("resetPassword").addEventListener("click", async () => {
     const email = $("authEmail").value.trim();
-    if (!email) { $("authMessage").textContent = "Enter your email first."; return; }
-    try { await sendPasswordResetEmail(auth, email); $("authMessage").textContent = "Password reset email sent."; }
-    catch (error) { $("authMessage").textContent = error.message; }
+    if (!email) { message("Enter your email first."); return; }
+    try { await sendPasswordResetEmail(auth, email); message("Password reset email sent."); }
+    catch (error) { message(error.message); }
   });
 }
-
 function connectFirebase() {
   if (!configReady()) {
     fileList.innerHTML = `<div class="empty-state"><div>☁</div><h3>Firebase setup required</h3><p>Follow SETUP.md and add your Firebase web config in app.js.</p></div>`;
@@ -192,7 +228,7 @@ function connectFirebase() {
       currentUser = user;
       const panel = $("authPanel");
       if (user) {
-        panel.innerHTML = '<div class="auth-status">Signed in as <strong>' + safeText(user.email || "Uploader") + '</strong><button class="auth-action" id="signOutBtn">Sign out</button></div>';
+        panel.innerHTML = '<div class="auth-status">Signed in as <strong>' + safeText(user.displayName || user.email || user.phoneNumber || "Uploader") + '</strong><button class="auth-action" id="signOutBtn">Sign out</button></div>';
         $("dropZone").hidden = false;
         $("uploadTopBtn").hidden = false;
         $("signOutBtn").addEventListener("click", () => signOut(auth).catch(error => toast(error.message)));
