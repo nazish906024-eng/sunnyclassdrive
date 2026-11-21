@@ -18,7 +18,7 @@ serve(async (req) => {
     if (!allowed.includes(type)) return Response.json({error:"File type not allowed."},{status:415,headers:cors});
     const bytes=await req.arrayBuffer();
     if (!bytes.byteLength || bytes.byteLength>25*1024*1024) return Response.json({error:"File must be 25 MB or smaller."},{status:413,headers:cors});
-    const path="school-files/"+Date.now()+"_"+crypto.randomUUID()+"_"+name;
+    const path=Date.now()+"_"+crypto.randomUUID()+"_"+name;
     const upload=await fetch(url+"/storage/v1/object/school-files/"+path,{method:"POST",headers:{"Authorization":"Bearer "+service,"apikey":service,"Content-Type":type,"x-upsert":"false"},body:bytes});
     if (!upload.ok) { console.error(await upload.text()); return Response.json({error:"Storage upload failed. Check public bucket 'school-files'."},{status:502,headers:cors}); }
     return Response.json({path,publicUrl:url+"/storage/v1/object/public/school-files/"+path},{headers:cors});
