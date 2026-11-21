@@ -12,7 +12,7 @@ serve(async (req) => {
     if (!verified.ok) return Response.json({error:"Sign in expired. Please sign in again."},{status:401,headers:cors});
     const user=(await verified.json()).users?.[0];
     if (!user || user.disabled) return Response.json({error:"Account cannot upload."},{status:403,headers:cors});
-    const name=decodeURIComponent(req.headers.get("X-File-Name") || "shared-file").replace(/[^\\w.() -]/g,"_").slice(0,100);
+    const name=decodeURIComponent(req.headers.get("X-File-Name") || "shared-file").replace(/[^\w.() -]/g,"_").slice(0,100);
     const type=req.headers.get("Content-Type") || "application/octet-stream";
     const allowed=["application/pdf","application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","text/plain","image/png","image/jpeg","image/webp","application/octet-stream"];
     if (!allowed.includes(type)) return Response.json({error:"File type not allowed."},{status:415,headers:cors});
