@@ -290,7 +290,8 @@ const dropZone = $("dropZone");
 }));
 dropZone.addEventListener("drop", event => handleFiles(event.dataTransfer.files));
 $("mobileMenu").addEventListener("click", () => $("sidebar").classList.toggle("open"));
-$("year").textContent = new Date().getFullYear();
+const yearElement = $("year");
+if (yearElement) yearElement.textContent = new Date().getFullYear();
 
 // Progressive Web App: show the native install prompt when supported.
 let deferredInstallPrompt = null;
