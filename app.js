@@ -293,43 +293,79 @@ $("mobileMenu").addEventListener("click", () => $("sidebar").classList.toggle("o
 const yearElement = $("year");
 if (yearElement) yearElement.textContent = new Date().getFullYear();
 
-// Progressive Web App: show the native install prompt when supported.
+// Progressive Web App install support.
 let deferredInstallPrompt = null;
 const installBtn = $("installBtn");
 const installHelp = $("installHelp");
 
-window.addEventListener("beforeinstallprompt", (event) => {
+function isAppInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.navigator.standalone === true;
+}
+
+function showInstallHelp() {
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    installHelp.innerHTML = 'To install on iPhone/iPad: tap the <b>Share</b> button in Safari, then choose <b>Add to Home Screen</b>.';
+  } else if (/Android/i.test(ua)) {
+    installHelp.innerHTML = 'If the install popup does not appear: open Chrome’s <b>⋮ menu</b> and choose <b>Install app</b> or <b>Add to Home screen</b>.';
+  } else {
+    installHelp.innerHTML = 'Open your browser menu and choose <b>Install SunnyClassDrive</b> or <b>Install app</b>, if available.';
+  }
+  installHelp.hidden = false;
+}
+
+window.addEventListener("beforeinstallprompt", event => {
   event.preventDefault();
   deferredInstallPrompt = event;
   installBtn.hidden = false;
   installHelp.hidden = true;
 });
+
 installBtn.addEventListener("click", async () => {
   if (!deferredInstallPrompt) {
-    installHelp.hidden = false;
+    showInstallHelp();
     return;
   }
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
+
+  const promptEvent = deferredInstallPrompt;
   deferredInstallPrompt = null;
-  installBtn.hidden = true;
+  try {
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    if (choice && choice.outcome === "accepted") {
+      installBtn.hidden = true;
+      installHelp.hidden = true;
+    } else {
+      showInstallHelp();
+    }
+  } catch (error) {
+    console.warn("PWA install prompt could not be opened:", error);
+    showInstallHelp();
+  }
 });
+
 window.addEventListener("appinstalled", () => {
   installBtn.hidden = true;
   installHelp.hidden = true;
   toast("SunnyClassDrive installed successfully.");
 });
+
+// Keep a working manual-install option visible on browsers that do not
+// expose beforeinstallprompt (including iOS Safari).
+if (isAppInstalled()) {
+  installBtn.hidden = true;
+  installHelp.hidden = true;
+} else {
+  installBtn.hidden = false;
+}
+
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js")
       .catch(error => console.warn("PWA service worker registration failed:", error));
   });
 }
-// On browsers without the install prompt event, reveal a short install hint.
-setTimeout(() => {
-  const standalone = window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true;
-  if (!standalone && installBtn.hidden) installHelp.hidden = false;
-}, 2500);
 
 connectFirebase();
