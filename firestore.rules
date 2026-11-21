@@ -1,24 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Public read-only file catalogue. Anyone can add file metadata.
-    // No public update or delete permission.
     match /schoolFiles/{fileId} {
       allow read: if true;
-      allow create: if
-        request.resource.data.keys().hasOnly([
-          'name', 'originalName', 'storagePath', 'downloadURL',
-          'size', 'contentType', 'createdAt'
-        ]) &&
-        request.resource.data.name is string &&
-        request.resource.data.name.size() > 0 &&
-        request.resource.data.name.size() <= 100 &&
-        request.resource.data.storagePath is string &&
-        request.resource.data.storagePath.matches('school-files/.*') &&
-        request.resource.data.downloadURL is string &&
-        request.resource.data.size is int &&
-        request.resource.data.size > 0 &&
-        request.resource.data.size <= 26214400;
+      allow create: if request.auth != null
+        && request.resource.data.uploadedBy == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.size is int
+        && request.resource.data.size > 0
+        && request.resource.data.size <= 25 * 1024 * 1024
+        && request.resource.data.downloadURL is string
+        && request.resource.data.storagePath is string;
       allow update, delete: if false;
     }
   }
