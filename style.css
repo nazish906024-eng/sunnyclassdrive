@@ -41,3 +41,15 @@
 .footer-bottom a{color:#8dbce7;text-decoration:none}
 .footer-bottom a:hover{text-decoration:underline}
 @media(max-width:680px){.site-footer{margin-top:35px}.footer-topline{margin-bottom:22px}.footer-credit{padding:8px 8px 25px}.footer-message{font-size:10px}.footer-bottom{font-size:9px;flex-wrap:wrap;justify-content:center;text-align:center;gap:7px}}
+
+/* Keep the PWA install control pinned to the upper-right on every screen. */
+.install-btn{position:fixed;top:14px;right:16px;z-index:1000;margin:0;box-shadow:0 8px 24px #0005}
+@media(max-width:680px){.install-btn{top:10px;right:10px;font-size:10px;padding:8px 10px;margin:0}}
+.auth-wide{display:block;width:100%;margin:12px 0;text-align:center}
+.auth-divider{text-align:center;color:#7488a3;font-size:10px;margin:12px 0;letter-spacing:1px}
+.email-login{margin:14px 0;color:#b7c9df;font-size:11px}
+.email-login summary{cursor:pointer;color:#8fc5f4;padding:8px 0}
+.email-login form{padding-top:5px}
+.auth-form .primary-btn{margin:6px 0}
+.auth-form button:disabled{opacity:.55;cursor:wait}
+#recaptcha-container{min-height:1px}
