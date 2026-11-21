@@ -10,3 +10,13 @@
 .developer-credit{color:#75baff;font-weight:700}
 .install-help{font-size:10px;color:#8295af;margin:8px 0 0}
 @media(max-width:680px){.install-btn{font-size:9px;padding:7px 8px;margin-right:5px}.public-pill{display:none}}
+
+.auth-panel{margin:14px 0;background:#111c2e;border:1px solid #263b56;border-radius:12px;padding:12px 15px}
+.auth-status{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#aebdd2;font-size:11px;flex-wrap:wrap}
+.auth-status strong{color:#eaf3ff}
+.auth-action{border:1px solid #365475;background:#1c304b;color:#d8e7fb;border-radius:8px;padding:8px 12px;font:700 11px "DM Sans",sans-serif;cursor:pointer;margin:4px}
+.auth-form{margin:10px 0 18px;max-width:440px;background:#142238;border:1px solid #304866;border-radius:13px;padding:17px}
+.auth-form[hidden],.upload-panel[hidden]{display:none}
+.auth-form label{display:block;color:#9fb0c7;font-size:11px;margin:10px 0}
+.auth-form input{display:block;width:100%;margin-top:6px;background:#0d1829;border:1px solid #30445f;border-radius:8px;padding:11px;color:#edf3ff}
+.auth-form p{color:#ffb6a9;font-size:11px}
