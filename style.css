@@ -20,3 +20,24 @@
 .auth-form label{display:block;color:#9fb0c7;font-size:11px;margin:10px 0}
 .auth-form input{display:block;width:100%;margin-top:6px;background:#0d1829;border:1px solid #30445f;border-radius:8px;padding:11px;color:#edf3ff}
 .auth-form p{color:#ffb6a9;font-size:11px}
+
+/* Premium creator credit section */
+.site-footer{margin-top:48px;padding:0 0 4px;border-top:0;color:#8294ad}
+.footer-topline{height:1px;background:linear-gradient(90deg,transparent,#345273 18%,#345273 82%,transparent);margin-bottom:30px}
+.footer-credit{text-align:center;padding:12px 16px 32px;position:relative;overflow:hidden}
+.footer-credit:before{content:"";position:absolute;width:280px;height:180px;left:50%;top:20px;transform:translateX(-50%);background:radial-gradient(ellipse,#2d7cc522 0%,transparent 70%);pointer-events:none}
+.footer-credit-mark{height:48px;width:48px;margin:0 auto 14px;border:1px solid #4779a6;border-radius:15px;display:grid;place-items:center;background:linear-gradient(145deg,#1e4770,#14253c);color:#9bd2ff;font-size:22px;font-weight:800;box-shadow:0 8px 28px #0003}
+.footer-kicker{position:relative;margin:0 0 5px;color:#91a8c4;font-size:9px;font-weight:800;letter-spacing:2.8px}
+.footer-name{position:relative;margin:0;color:#f1f6ff;font-size:clamp(30px,5vw,43px);font-weight:800;letter-spacing:5px;line-height:1.25}
+.footer-name span{color:#62b6ff}
+.footer-role{position:relative;margin:9px 0 0;color:#82bff5;font-size:9px;font-weight:800;letter-spacing:1.8px}
+.footer-role span{padding:0 7px;color:#506d8e}
+.footer-message{position:relative;margin:13px auto 17px;max-width:390px;color:#8799b2;font-size:11px;line-height:1.7}
+.footer-github{position:relative;display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #2c4968;border-radius:9px;background:#13243a;color:#c5dcf5;text-decoration:none;font-size:10px;font-weight:700;transition:background .2s,border-color .2s,transform .2s}
+.footer-github:hover{background:#1a3553;border-color:#5487b7;transform:translateY(-2px)}
+.footer-github svg{width:15px;height:15px}
+.footer-arrow{color:#75bdff;font-size:13px}
+.footer-bottom{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid #1b2a40;padding:15px 2px 4px;color:#71839c;font-size:10px}
+.footer-bottom a{color:#8dbce7;text-decoration:none}
+.footer-bottom a:hover{text-decoration:underline}
+@media(max-width:680px){.site-footer{margin-top:35px}.footer-topline{margin-bottom:22px}.footer-credit{padding:8px 8px 25px}.footer-message{font-size:10px}.footer-bottom{font-size:9px;flex-wrap:wrap;justify-content:center;text-align:center;gap:7px}}
