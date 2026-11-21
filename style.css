@@ -53,3 +53,10 @@
 .auth-form .primary-btn{margin:6px 0}
 .auth-form button:disabled{opacity:.55;cursor:wait}
 #recaptcha-container{min-height:1px}
+
+/* Minimal colourful developer footer: name and contact only, no logo or heart. */
+.site-footer{margin-top:42px;padding:0 0 12px;border-top:1px solid #263b56}
+.footer-simple{text-align:center;padding:24px 12px 18px}
+.footer-simple .footer-name{margin:0 0 12px;font-size:clamp(30px,5vw,42px);letter-spacing:4px;background:linear-gradient(90deg,#61c7ff,#9b8cff,#ff82bd);-webkit-background-clip:text;background-clip:text;color:transparent}
+.footer-contact{display:inline-block;color:#8fd5ff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.5px;padding:8px 15px;border:1px solid #42658a;border-radius:9px;background:linear-gradient(110deg,#173653,#30264d);transition:transform .2s,filter .2s}
+.footer-contact:hover{transform:translateY(-2px);filter:brightness(1.2)}
