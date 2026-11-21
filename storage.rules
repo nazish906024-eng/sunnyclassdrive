@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /school-files/{fileName} {
+      // Public download access is needed because this version has no login.
+      allow read: if true;
+
+      // Public upload, restricted to 25 MB and selected classroom file types.
+      allow create: if request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 25 * 1024 * 1024
+        && request.resource.contentType.matches(
+          'application/pdf|application/vnd.ms-powerpoint|application/vnd.openxmlformats-officedocument.presentationml.presentation|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document|application/vnd.ms-excel|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet|text/plain|image/png|image/jpeg|image/webp'
+        );
+
+      // No public replacement or deletion.
+      allow update, delete: if false;
+    }
+  }
+}

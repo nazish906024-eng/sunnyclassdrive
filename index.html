@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SunnyClassDrive" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>SunnyClassDrive — School File Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#">
+        <span class="brand-mark">☁</span>
+        <span>Sunny<span class="brand-accent">ClassDrive</span><small>School File Hub</small></span>
+      </a>
+      <div class="side-label">WORKSPACE</div>
+      <button class="nav-item active" data-filter="all"><span>▦</span> All files <span class="nav-count" id="allCount">0</span></button>
+      <button class="nav-item" data-filter="PDF"><span>▤</span> PDF documents</button>
+      <button class="nav-item" data-filter="PPT"><span>▧</span> Presentations</button>
+      <button class="nav-item" data-filter="DOC"><span>▤</span> Documents</button>
+      <button class="nav-item" data-filter="IMAGE"><span>▧</span> Images</button>
+      <div class="sidebar-bottom">
+        <div class="storage-card">
+          <div class="storage-icon">☁</div>
+          <strong>Cloud storage</strong>
+          <p>Files shared with your school community.</p>
+          <span class="storage-status"><i></i> Connected when configured</span>
+        </div>
+        <p class="sidebar-note">SunnyClassDrive · School workspace</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button>
+        <div class="breadcrumb">Workspace <span>/</span> <b id="breadcrumbName">All files</b></div>
+        <div class="top-actions">
+          <button class="install-btn" id="installBtn" hidden>↓ Install app</button>
+          <span class="public-pill"><i></i> Public workspace</span>
+        </div>
+      </header>
+
+      <section class="welcome-row">
+        <div>
+          <p class="eyebrow">YOUR SCHOOL'S SHARED SPACE</p>
+          <h1>Everything in <span>one place.</span></h1>
+          <p class="subtitle">Upload at home. Find and download at school.</p>
+        </div>
+        <button class="primary-btn" id="uploadTopBtn"><span>＋</span> Upload files</button>
+      </section>
+
+      <section class="stats-grid">
+        <article class="stat-card"><div class="stat-icon blue">▦</div><div><p>Total files</p><strong id="totalFiles">—</strong></div><span class="stat-caption">In this workspace</span></article>
+        <article class="stat-card"><div class="stat-icon purple">▧</div><div><p>Presentations</p><strong id="totalPpt">—</strong></div><span class="stat-caption">PPT / PPTX</span></article>
+        <article class="stat-card"><div class="stat-icon green">▤</div><div><p>Documents</p><strong id="totalDocs">—</strong></div><span class="stat-caption">PDF / DOC / DOCX</span></article>
+      </section>
+
+      <section class="upload-panel" id="dropZone">
+        <div class="upload-illustration">☁<span>↑</span></div>
+        <div class="upload-copy">
+          <h2>Drop files here to share</h2>
+          <p>or choose files from your device. Maximum 25 MB per file.</p>
+          <div class="upload-hints"><span>PDF</span><span>PPT / PPTX</span><span>DOC / DOCX</span><span>Images</span></div>
+        </div>
+        <button class="secondary-btn" id="browseBtn">Browse files</button>
+        <input type="file" id="fileInput" multiple hidden
+          accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.webp" />
+      </section>
+
+      <section class="files-section">
+        <div class="section-heading">
+          <div><p class="eyebrow">LIBRARY</p><h2 id="filesHeading">Recent files</h2></div>
+          <div class="file-tools">
+            <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search files..." /></label>
+            <select id="sortSelect" aria-label="Sort files">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name">Name A–Z</option>
+              <option value="size">Largest first</option>
+            </select>
+          </div>
+        </div>
+        <div class="file-list-wrap">
+          <div class="file-list-head"><span>NAME</span><span>TYPE</span><span>SIZE</span><span>UPLOADED</span><span></span></div>
+          <div id="fileList" class="file-list">
+            <div class="empty-state"><div>☁</div><h3>Loading your school files...</h3><p>Connect Firebase to start using SunnyClassDrive.</p></div>
+          </div>
+        </div>
+        <p class="privacy-note">Public workspace: upload only files that are safe for your school community to access.</p>
+      </section>
+      <footer>© <span id="year"></span> SunnyClassDrive <span>·</span> Made for learning together <span>·</span> Developed with care by <strong class="developer-credit">Faraz Asad</strong> <span>·</span> Developed by <strong class="developer-credit">Nazish</strong></footer>
+      <p class="install-help" id="installHelp" hidden>To install: open your browser menu and choose <b>Add to Home screen</b> or <b>Install app</b>.</p>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div class="upload-progress" id="uploadProgress" hidden>
+    <div class="progress-head"><strong id="progressTitle">Uploading files</strong><span id="progressPercent">0%</span></div>
+    <div class="progress-track"><div id="progressBar"></div></div>
+    <p id="progressDetail">Please keep this page open.</p>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
