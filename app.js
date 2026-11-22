@@ -3,7 +3,8 @@
 // 2) Keep the Firebase project in test/development only until rules are reviewed.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 import {
   getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -28,7 +29,7 @@ const fileList = $("fileList");
 const toastEl = $("toast");
 let allFiles = [];
 let activeFilter = "all";
-let db, auth, currentUser = null;
+let db, auth, functionsClient, currentUser = null;
 const SUPABASE_URL = "https://vwewwowlpaqdtutyniou.supabase.co";
 const EDGE_UPLOAD_URL = SUPABASE_URL + "/functions/v1/upload-file";
 
@@ -151,69 +152,184 @@ async function handleFiles(files) {
   $("uploadProgress").hidden = true;
   $("fileInput").value = "";
 }
+
+function usernameToEmail(username) {
+  const normalized = String(username || "").trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{2,19}$/.test(normalized)) {
+    throw new Error("Username must be 3–20 characters and use only letters, numbers, dots, underscores or hyphens.");
+  }
+  return normalized + "@accounts.sunnyclassdrive.invalid";
+}
+
 function installAuthUI() {
   document.querySelector(".topbar").insertAdjacentHTML("afterend",
     '<section class="auth-panel" id="authPanel"></section>' +
-    '<div class="auth-form" id="authForm" hidden>' +
-    '<strong>Uploader account</strong>' +
-    '<button class="auth-action auth-wide" id="googleSignIn" type="button">Continue with Google</button>' +
-    '<div class="auth-divider">OR</div>' +
-    '<label>Phone number<input id="phoneNumber" type="tel" inputmode="tel" placeholder="+91 9876543210" autocomplete="tel"></label>' +
-    '<div id="recaptcha-container"></div>' +
-    '<button class="auth-action auth-wide" id="sendOtp" type="button">Send OTP</button>' +
-    '<div id="otpArea" hidden><label>Verification code<input id="otpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP"></label><button class="primary-btn" id="verifyOtp" type="button">Verify &amp; sign in</button></div>' +
-    '<details class="email-login"><summary>Use email and password instead</summary>' +
-    '<form id="emailAuthForm"><label>Email<input id="authEmail" type="email" required autocomplete="username"></label><label>Password<input id="authPassword" type="password" minlength="6" required autocomplete="current-password"></label><button class="primary-btn" id="authSubmit" type="submit">Sign in</button><button class="auth-action" id="toggleAuth" type="button">Create account</button><button class="auth-action" id="resetPassword" type="button">Forgot password?</button></form></details>' +
-    '<button class="auth-action" id="closeAuth" type="button">Close</button><p id="authMessage" aria-live="polite"></p></div>');
-  let register = false, confirmationResult = null, recaptchaVerifier = null;
-  const message = text => { $("authMessage").textContent = text; };
-  $("googleSignIn").addEventListener("click", async () => {
-    message("Opening Google sign-in…");
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); $("authForm").hidden = true; toast("Signed in with Google."); }
-    catch (error) { message(error.message || "Google sign-in failed."); }
-  });
-  $("sendOtp").addEventListener("click", async () => {
-    const phone = $("phoneNumber").value.trim().replace(/[\s()-]/g, "");
-    if (!/^\+[1-9]\d{7,14}$/.test(phone)) { message("Enter a valid phone number with country code, e.g. +91 9876543210."); return; }
-    $("sendOtp").disabled = true; message("Preparing secure verification…");
-    try {
-      if (!recaptchaVerifier) recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
-      confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
-      $("otpArea").hidden = false;
-      message("OTP sent. Check your phone and enter the code.");
-    } catch (error) {
-      message(error.message || "Could not send OTP. Check Firebase Phone sign-in settings.");
-      if (recaptchaVerifier) { try { await recaptchaVerifier.clear(); } catch (_) {} recaptchaVerifier = null; }
-    } finally { $("sendOtp").disabled = false; }
-  });
-  $("verifyOtp").addEventListener("click", async () => {
-    const code = $("otpCode").value.trim();
-    if (!confirmationResult || !/^\d{6}$/.test(code)) { message("Enter the 6-digit verification code."); return; }
-    try { await confirmationResult.confirm(code); $("authForm").hidden = true; toast("Phone number verified. Signed in."); }
-    catch (error) { message(error.message || "OTP verification failed."); }
-  });
-  $("toggleAuth").addEventListener("click", () => { register = !register; $("authSubmit").textContent = register ? "Create account" : "Sign in"; $("toggleAuth").textContent = register ? "I already have an account" : "Create account"; });
-  $("closeAuth").addEventListener("click", () => { $("authForm").hidden = true; });
-  $("emailAuthForm").addEventListener("submit", async event => {
+    '<section class="auth-form" id="authForm" hidden>' +
+      '<strong>Student / Admin login</strong>' +
+      '<form id="usernameLoginForm">' +
+        '<label>Username<input id="loginUsername" type="text" required minlength="3" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Enter your username"></label>' +
+        '<label>Password<input id="loginPassword" type="password" required minlength="8" autocomplete="current-password" placeholder="Enter your password"></label>' +
+        '<button class="primary-btn auth-wide" id="loginSubmit" type="submit">Sign in</button>' +
+      '</form>' +
+      '<p id="authMessage" aria-live="polite"></p>' +
+      '<button class="auth-action" id="closeAuth" type="button">Close</button>' +
+    '</section>');
+
+  const panel = $("authPanel");
+  const message = (value) => { $("authMessage").textContent = value; };
+
+  $("usernameLoginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const email = $("authEmail").value.trim(), password = $("authPassword").value;
-    message("Please wait…");
+    const username = $("loginUsername").value.trim().toLowerCase();
+    const password = $("loginPassword").value;
+    const submit = $("loginSubmit");
+    submit.disabled = true;
+    message("Signing in…");
     try {
-      if (register) await createUserWithEmailAndPassword(auth, email, password);
-      else await signInWithEmailAndPassword(auth, email, password);
-      $("authForm").hidden = true; toast("Signed in successfully.");
-    } catch (error) { message(error.message); }
+      const email = usernameToEmail(username);
+      await signInWithEmailAndPassword(auth, email, password);
+      $("authForm").hidden = true;
+      toast("Signed in successfully.");
+    } catch (error) {
+      console.error("Username sign-in failed:", error);
+      message(error.code === "auth/too-many-requests"
+        ? "Too many attempts. Please wait and try again."
+        : "Invalid username or password, or this account is disabled.");
+    } finally {
+      submit.disabled = false;
+    }
   });
-  $("resetPassword").addEventListener("click", async () => {
-    const email = $("authEmail").value.trim();
-    if (!email) { message("Enter your email first."); return; }
-    try { await sendPasswordResetEmail(auth, email); message("Password reset email sent."); }
-    catch (error) { message(error.message); }
+
+  $("closeAuth").addEventListener("click", () => { $("authForm").hidden = true; });
+
+  panel.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-admin-action], #showAuthBtn, #signOutBtn");
+    if (!button) return;
+
+    if (button.id === "showAuthBtn") {
+      $("authForm").hidden = false;
+      $("loginUsername").focus();
+      return;
+    }
+    if (button.id === "signOutBtn") {
+      try { await signOut(auth); toast("Signed out."); }
+      catch (error) { toast(error.message || "Could not sign out."); }
+      return;
+    }
+
+    const action = button.dataset.adminAction;
+    const uid = button.dataset.uid;
+    if (!uid) return;
+
+    try {
+      button.disabled = true;
+      if (action === "toggle") {
+        const disabled = button.dataset.disabled === "true";
+        await httpsCallable(functionsClient, "setStudentDisabled")({ uid, disabled });
+        toast(disabled ? "Student account disabled." : "Student account enabled.");
+        await loadAdminStudents();
+      } else if (action === "reset") {
+        const password = window.prompt("Enter a new password (at least 8 characters):");
+        if (password === null) return;
+        await httpsCallable(functionsClient, "resetStudentPassword")({ uid, newPassword: password });
+        toast("Student password updated.");
+      } else if (action === "delete") {
+        if (!window.confirm("Permanently delete this student account? This cannot be undone.")) return;
+        await httpsCallable(functionsClient, "deleteStudentAccount")({ uid });
+        toast("Student account deleted.");
+        await loadAdminStudents();
+      }
+    } catch (error) {
+      console.error(error);
+      toast(error.message || "Admin action failed.");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  panel.addEventListener("submit", async (event) => {
+    if (event.target.id !== "studentCreateForm") return;
+    event.preventDefault();
+    const submit = $("createStudentBtn");
+    const username = $("newUsername").value.trim().toLowerCase();
+    const displayName = $("newDisplayName").value.trim();
+    const password = $("newStudentPassword").value;
+    submit.disabled = true;
+    $("adminMessage").textContent = "Creating account…";
+    try {
+      const result = await httpsCallable(functionsClient, "createStudentAccount")({
+        username, displayName, password
+      });
+      $("studentCreateForm").reset();
+      $("adminMessage").textContent = "Account created. Share the username and temporary password securely with the student.";
+      toast("Student account created: " + result.data.username);
+      await loadAdminStudents();
+    } catch (error) {
+      console.error(error);
+      $("adminMessage").textContent = error.message || "Could not create the account.";
+    } finally {
+      submit.disabled = false;
+    }
   });
 }
+
+async function loadAdminStudents() {
+  const target = $("adminStudentList");
+  if (!target || !functionsClient) return;
+  target.innerHTML = '<p class="admin-muted">Loading student accounts…</p>';
+  try {
+    const result = await httpsCallable(functionsClient, "listStudentAccounts")({});
+    const students = result.data.students || [];
+    if (!students.length) {
+      target.innerHTML = '<p class="admin-muted">No student accounts have been created yet.</p>';
+      return;
+    }
+    target.innerHTML = students.map(student => {
+      const status = student.active ? "Active" : "Disabled";
+      const actionLabel = student.active ? "Disable" : "Enable";
+      return '<div class="admin-user-row">' +
+        '<div class="admin-user-info"><strong>' + safeText(student.username) + '</strong>' +
+        '<small>' + safeText(student.displayName || "Student") + ' · ' + status + '</small></div>' +
+        '<div class="admin-user-actions">' +
+          '<button class="auth-action" type="button" data-admin-action="toggle" data-uid="' + safeText(student.uid) + '" data-disabled="' + String(student.active) + '">' + actionLabel + '</button>' +
+          '<button class="auth-action" type="button" data-admin-action="reset" data-uid="' + safeText(student.uid) + '">Reset password</button>' +
+          '<button class="auth-action danger-action" type="button" data-admin-action="delete" data-uid="' + safeText(student.uid) + '">Delete</button>' +
+        '</div></div>';
+    }).join("");
+  } catch (error) {
+    console.error(error);
+    target.innerHTML = '<p class="admin-error">Could not load accounts. Check admin permissions and Cloud Functions deployment.</p>';
+  }
+}
+
+function renderSignedInPanel(panel, user, claims) {
+  const username = claims.username || user.displayName || "User";
+  panel.innerHTML =
+    '<div class="auth-status">Signed in as <strong>' + safeText(username) +
+    (claims.role === "admin" ? ' <span class="admin-role">ADMIN</span>' : ' <span class="student-role">STUDENT</span>') +
+    '</strong><button class="auth-action" id="signOutBtn" type="button">Sign out</button></div>';
+
+  if (claims.role === "admin") {
+    panel.insertAdjacentHTML("beforeend",
+      '<div class="admin-tools">' +
+        '<div class="admin-heading"><strong>Admin · Student accounts</strong><span>Private account management</span></div>' +
+        '<form id="studentCreateForm" class="admin-create-form">' +
+          '<label>Username<input id="newUsername" required minlength="3" maxlength="20" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,19}" placeholder="e.g. student01" autocapitalize="none"></label>' +
+          '<label>Student name<input id="newDisplayName" required maxlength="60" placeholder="Student name"></label>' +
+          '<label>Temporary password<input id="newStudentPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></label>' +
+          '<button class="primary-btn" id="createStudentBtn" type="submit">＋ Create student account</button>' +
+        '</form>' +
+        '<p id="adminMessage" class="admin-muted" aria-live="polite"></p>' +
+        '<div class="admin-list-heading">Student accounts</div>' +
+        '<div id="adminStudentList"><p class="admin-muted">Loading…</p></div>' +
+      '</div>');
+    loadAdminStudents();
+  }
+}
+
 function connectFirebase() {
   if (!configReady()) {
-    fileList.innerHTML = `<div class="empty-state"><div>☁</div><h3>Firebase setup required</h3><p>Follow SETUP.md and add your Firebase web config in app.js.</p></div>`;
+    fileList.innerHTML = '<div class="empty-state"><div>☁</div><h3>Firebase setup required</h3><p>Follow SETUP.md and add your Firebase web config in app.js.</p></div>';
     $("totalFiles").textContent = "—";
     $("totalPpt").textContent = "—";
     $("totalDocs").textContent = "—";
@@ -223,29 +339,43 @@ function connectFirebase() {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
+    functionsClient = getFunctions(app, "asia-south1");
     installAuthUI();
-    onAuthStateChanged(auth, user => {
+
+    onAuthStateChanged(auth, async (user) => {
       currentUser = user;
       const panel = $("authPanel");
       if (user) {
-        panel.innerHTML = '<div class="auth-status">Signed in as <strong>' + safeText(user.displayName || user.email || user.phoneNumber || "Uploader") + '</strong><button class="auth-action" id="signOutBtn">Sign out</button></div>';
-        $("dropZone").hidden = false;
-        $("uploadTopBtn").hidden = false;
-        $("signOutBtn").addEventListener("click", () => signOut(auth).catch(error => toast(error.message)));
+        try {
+          const token = await user.getIdTokenResult();
+          const claims = token.claims || {};
+          if (!["admin", "student"].includes(claims.role)) {
+            currentUser = null;
+            await signOut(auth);
+            toast("This account is not authorized for SunnyClassDrive.");
+            return;
+          }
+          renderSignedInPanel(panel, user, claims);
+          $("dropZone").hidden = false;
+          $("uploadTopBtn").hidden = false;
+        } catch (error) {
+          console.error(error);
+          toast("Could not verify account permissions.");
+        }
       } else {
-        panel.innerHTML = '<div class="auth-status">Sign in to upload. Anyone can browse and download.<button class="auth-action" id="showAuthBtn">Sign in / Register</button></div>';
+        panel.innerHTML = '<div class="auth-status">Sign in with the username and password provided by your administrator. Browsing and downloads remain public.<button class="auth-action" id="showAuthBtn" type="button">Sign in</button></div>';
         $("dropZone").hidden = true;
         $("uploadTopBtn").hidden = true;
-        $("showAuthBtn").addEventListener("click", () => { $("authForm").hidden = false; });
       }
     });
+
     const filesQuery = query(collection(db, "schoolFiles"), orderBy("createdAt", "desc"));
     onSnapshot(filesQuery, snapshot => {
       allFiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       renderFiles();
     }, error => {
       console.error(error);
-      fileList.innerHTML = `<div class="empty-state"><div>⚠</div><h3>Could not load files</h3><p>Check Firestore rules and internet connection.</p></div>`;
+      fileList.innerHTML = '<div class="empty-state"><div>⚠</div><h3>Could not load files</h3><p>Check Firestore rules and internet connection.</p></div>';
       toast("Firebase error. Check your project setup and rules.");
     });
   } catch (error) {
