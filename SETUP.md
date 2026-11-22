@@ -77,9 +77,17 @@ Usernames are case-insensitive and must be 3–20 characters. Allowed characters
 
 Publish `firestore.rules` through the Firebase CLI command above. The Admin SDK used by Cloud Functions bypasses Firestore client rules, so the functions enforce admin claims themselves.
 
-## 6. Supabase file uploads stay as they are
+## 6. Redeploy the secured Supabase upload function
 
-The existing `app.js` still sends the Firebase ID token to the Supabase `upload-file` Edge Function. Keep the existing Supabase bucket and Edge Function secrets configured as before. Do not paste the Supabase service-role key into `app.js`, GitHub, or a public message.
+The existing `app.js` still sends the Firebase ID token to the Supabase `upload-file` Edge Function. I also updated `supabase/functions/upload-file/index.ts` so it rejects disabled users and accepts only verified Firebase tokens carrying the `student` or `admin` role and the SunnyClassDrive internal account email suffix.
+
+After merging this branch, redeploy the updated function to Supabase:
+
+```bash
+supabase functions deploy upload-file --no-verify-jwt
+```
+
+Keep the existing Supabase bucket and Edge Function secrets configured as before. Do not paste the Supabase service-role key into `app.js`, GitHub, or a public message. Updating the source file in GitHub does not update the live Supabase Edge Function until you deploy it.
 
 ## 7. Test checklist
 
