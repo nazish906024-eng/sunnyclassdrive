@@ -1,17 +1,50 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function activeUser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+
     match /schoolFiles/{fileId} {
+      // Existing SunnyClassDrive behavior: anyone can browse and download public files.
       allow read: if true;
-      allow create: if request.auth != null
+
+      // Only an active, admin-created student/admin account can upload metadata.
+      allow create: if activeUser()
+        && request.auth.token.role in ['student', 'admin']
         && request.resource.data.uploadedBy == request.auth.uid
         && request.resource.data.name is string
         && request.resource.data.size is int
         && request.resource.data.size > 0
         && request.resource.data.size <= 25 * 1024 * 1024
         && request.resource.data.downloadURL is string
-        && request.resource.data.storagePath is string;
+        && request.resource.data.storagePath is string
+        && request.resource.data.keys().hasOnly([
+          'name', 'originalName', 'storagePath', 'downloadURL',
+          'size', 'contentType', 'uploadedBy', 'createdAt'
+        ]);
+
       allow update, delete: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /usernames/{username} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
