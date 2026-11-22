@@ -182,18 +182,8 @@ exports.resetStudentPassword = onCall(async (request) => {
   validatePassword(newPassword);
 
   await getStudent(uid);
-  await auth.updateUser(uid, { password: newPassword, disabled: false });
+  await auth.updateUser(uid, { password: newPassword });
   await auth.revokeRefreshTokens(uid);
-  const user = await auth.getUser(uid);
-  const username = user.customClaims?.username;
-
-  const batch = db.batch();
-  batch.set(db.collection("users").doc(uid), { active: true }, { merge: true });
-  if (username) {
-    batch.set(db.collection("usernames").doc(username), { active: true }, { merge: true });
-  }
-  await batch.commit();
-
   return { success: true };
 });
 
