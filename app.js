@@ -1,6 +1,5 @@
-// SunnyClassDrive — public school file hub (no login).
-// 1) Paste your Firebase web configuration below.
-// 2) Keep the Firebase project in test/development only until rules are reviewed.
+// SunnyClassDrive — public file hub with admin-created username/password accounts.
+// Firebase client configuration is public by design; enforce access with Auth and Firestore rules.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
