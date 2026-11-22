@@ -60,3 +60,34 @@
 .footer-simple .footer-name{margin:0 0 12px;font-size:clamp(30px,5vw,42px);letter-spacing:4px;background:linear-gradient(90deg,#61c7ff,#9b8cff,#ff82bd);-webkit-background-clip:text;background-clip:text;color:transparent}
 .footer-contact{display:inline-block;color:#8fd5ff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.5px;padding:8px 15px;border:1px solid #42658a;border-radius:9px;background:linear-gradient(110deg,#173653,#30264d);transition:transform .2s,filter .2s}
 .footer-contact:hover{transform:translateY(-2px);filter:brightness(1.2)}
+
+
+/* Admin-managed username authentication */
+.admin-tools{margin-top:13px;padding:16px;border-top:1px solid #263b56}
+.admin-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+.admin-heading strong,.admin-list-heading{font-size:12px;color:#e7f1ff;font-weight:800}
+.admin-heading span,.admin-muted{font-size:10px;color:#8398b5}
+.admin-create-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}
+.admin-create-form label{display:block;color:#9fb0c7;font-size:10px}
+.admin-create-form input{display:block;width:100%;margin-top:6px;background:#0d1829;border:1px solid #30445f;border-radius:8px;padding:10px;color:#edf3ff;font:11px "DM Sans",sans-serif;min-width:0}
+.admin-create-form .primary-btn{grid-column:1/-1;justify-self:start}
+.admin-list-heading{margin:16px 0 8px}
+.admin-user-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #22334a}
+.admin-user-info{min-width:0}
+.admin-user-info strong{display:block;font-size:11px;color:#e7f1ff}
+.admin-user-info small{display:block;margin-top:4px;color:#8da1bd;font-size:10px}
+.admin-user-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+.admin-user-actions .auth-action{font-size:9px;padding:6px 8px;margin:0}
+.danger-action{border-color:#70404b;background:#3a202b;color:#ffc0c7}
+.admin-error{font-size:10px;color:#ff9fa8}
+.admin-role,.student-role{display:inline-block;margin-left:6px;padding:3px 6px;border-radius:5px;font-size:8px;letter-spacing:.7px;vertical-align:middle}
+.admin-role{background:#3a2d57;color:#cbb8ff}
+.student-role{background:#173d39;color:#83e0c1}
+@media(max-width:680px){
+  .admin-tools{padding:13px 2px}
+  .admin-create-form{grid-template-columns:1fr}
+  .admin-create-form .primary-btn{width:100%}
+  .admin-heading{align-items:flex-start;flex-direction:column;gap:4px}
+  .admin-user-row{align-items:flex-start;flex-direction:column}
+  .admin-user-actions{justify-content:flex-start}
+}
