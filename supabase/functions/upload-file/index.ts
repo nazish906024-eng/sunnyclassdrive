@@ -12,6 +12,19 @@ serve(async (req) => {
     if (!verified.ok) return Response.json({error:"Sign in expired. Please sign in again."},{status:401,headers:cors});
     const user=(await verified.json()).users?.[0];
     if (!user || user.disabled) return Response.json({error:"Account cannot upload."},{status:403,headers:cors});
+
+    // The Firebase ID token was validated by accounts:lookup above.
+    // Decode its now-verified claims and accept only admin-created SunnyClassDrive accounts.
+    const tokenParts=token.split(".");
+    if (tokenParts.length !== 3) return Response.json({error:"Invalid sign-in token."},{status:401,headers:cors});
+    const payload=tokenParts[1].replace(/-/g,"+").replace(/_/g,"/");
+    const paddedPayload=payload+"=".repeat((4-(payload.length%4))%4);
+    const claims=JSON.parse(atob(paddedPayload));
+    const allowedEmail=(user.email || "").toLowerCase().endsWith("@accounts.sunnyclassdrive.invalid");
+    const allowedRole=["student","admin"].includes(claims.role);
+    if (!allowedEmail || !allowedRole || claims.sub !== user.localId) {
+      return Response.json({error:"Only active administrator-created accounts can upload."},{status:403,headers:cors});
+    }
     const name=decodeURIComponent(req.headers.get("X-File-Name") || "shared-file").replace(/[^\w.() -]/g,"_").slice(0,100);
     const type=req.headers.get("Content-Type") || "application/octet-stream";
     const allowed=["application/pdf","application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","text/plain","image/png","image/jpeg","image/webp","application/octet-stream"];
