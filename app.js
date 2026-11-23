@@ -145,6 +145,7 @@ function renderFiles() {
   $("favouriteCount").textContent = favouriteIds.size;
   $("filesHeading").textContent = activeFilter === "all" ? "Recent files" : activeFilter === "FAVOURITES" ? "Favourite files" : `${activeFilter} files`;
   fileList.classList.toggle("grid-view", viewMode === "grid");
+  fileList.parentElement.classList.toggle("grid-mode", viewMode === "grid");
 
   if (!shown.length) {
     fileList.innerHTML = `<div class="empty-state"><div>☁</div><h3>${activeFilter === "FAVOURITES" ? "No favourites yet" : allFiles.length ? "No matching files" : "No files uploaded yet"}</h3><p>${activeFilter === "FAVOURITES" ? "Tap the star on any file to save it here." : allFiles.length ? "Try another search or category." : "Upload the first file to your school workspace."}</p></div>`;
