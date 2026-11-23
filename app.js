@@ -68,11 +68,65 @@ function safeText(value) {
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[char]));
 }
+function getFavouriteIds() {
+  try { return new Set(JSON.parse(localStorage.getItem("scd-favourites") || "[]")); }
+  catch (_) { return new Set(); }
+}
+let favouriteIds = getFavouriteIds();
+let viewMode = "list";
+
+function toggleFavourite(id) {
+  if (favouriteIds.has(id)) favouriteIds.delete(id);
+  else favouriteIds.add(id);
+  try { localStorage.setItem("scd-favourites", JSON.stringify([...favouriteIds])); }
+  catch (_) { toast("Could not save favourites on this device."); }
+  renderFiles();
+}
+function openPreview(file) {
+  const modal = $("previewModal");
+  const body = $("previewBody");
+  const title = $("previewTitle");
+  const open = $("previewOpen");
+  const download = $("previewDownload");
+  const url = file.downloadURL || "";
+  const type = category(file);
+  title.textContent = file.name || "File preview";
+  open.href = url;
+  download.href = url;
+  body.innerHTML = "";
+  if (type === "PDF") {
+    const frame = document.createElement("iframe");
+    frame.src = url;
+    frame.title = "PDF preview";
+    frame.className = "preview-frame";
+    body.appendChild(frame);
+  } else if (type === "IMAGE") {
+    const image = document.createElement("img");
+    image.src = url;
+    image.alt = file.name || "Image preview";
+    image.className = "preview-image";
+    body.appendChild(image);
+  } else {
+    const message = document.createElement("div");
+    message.className = "preview-unavailable";
+    message.innerHTML = "<strong>Preview isn't available for this file type.</strong><p>You can open it in a new tab or download it.</p>";
+    body.appendChild(message);
+  }
+  modal.hidden = false;
+  document.body.classList.add("modal-open");
+}
+function closePreview() {
+  $("previewModal").hidden = true;
+  $("previewBody").innerHTML = "";
+  document.body.classList.remove("modal-open");
+}
 function renderFiles() {
   const search = $("searchInput").value.trim().toLowerCase();
   let shown = allFiles.filter(file => {
-    const matchesCategory = activeFilter === "all" || category(file) === activeFilter;
-    const matchesSearch = file.name.toLowerCase().includes(search);
+    const matchesCategory = activeFilter === "all" || activeFilter === "FAVOURITES"
+      ? (activeFilter !== "FAVOURITES" || favouriteIds.has(file.id))
+      : category(file) === activeFilter;
+    const matchesSearch = String(file.name || "").toLowerCase().includes(search);
     return matchesCategory && matchesSearch;
   });
   const sort = $("sortSelect").value;
@@ -88,22 +142,29 @@ function renderFiles() {
   $("totalPpt").textContent = allFiles.filter(f => category(f) === "PPT").length;
   $("totalDocs").textContent = allFiles.filter(f => ["PDF","DOC"].includes(category(f))).length;
   $("allCount").textContent = allFiles.length;
-  $("filesHeading").textContent = activeFilter === "all" ? "Recent files" : `${activeFilter} files`;
+  $("favouriteCount").textContent = favouriteIds.size;
+  $("filesHeading").textContent = activeFilter === "all" ? "Recent files" : activeFilter === "FAVOURITES" ? "Favourite files" : `${activeFilter} files`;
+  fileList.classList.toggle("grid-view", viewMode === "grid");
 
   if (!shown.length) {
-    fileList.innerHTML = `<div class="empty-state"><div>☁</div><h3>${allFiles.length ? "No matching files" : "No files uploaded yet"}</h3><p>${allFiles.length ? "Try another search or category." : "Upload the first file to your school workspace."}</p></div>`;
+    fileList.innerHTML = `<div class="empty-state"><div>☁</div><h3>${activeFilter === "FAVOURITES" ? "No favourites yet" : allFiles.length ? "No matching files" : "No files uploaded yet"}</h3><p>${activeFilter === "FAVOURITES" ? "Tap the star on any file to save it here." : allFiles.length ? "Try another search or category." : "Upload the first file to your school workspace."}</p></div>`;
     return;
   }
   fileList.innerHTML = shown.map(file => {
     const type = category(file);
     const iconClass = type === "PDF" ? "pdf" : type === "PPT" ? "ppt" : type === "DOC" ? "doc" : type === "IMAGE" ? "image" : "other";
     const icon = type === "PDF" ? "PDF" : type === "PPT" ? "PPT" : type === "DOC" ? "DOC" : type === "IMAGE" ? "IMG" : "FILE";
+    const fav = favouriteIds.has(file.id);
     return `<div class="file-row">
       <div class="file-name"><div class="file-symbol ${iconClass}">${icon}</div><div style="min-width:0"><strong title="${safeText(file.name)}">${safeText(file.name)}</strong><small>${safeText(file.originalName || file.name)}</small></div></div>
       <div class="file-meta"><span class="type-tag">${type}</span></div>
       <div class="file-meta file-size">${formatSize(file.size)}</div>
       <div class="file-meta file-date">${formatDate(file.createdAt)}</div>
-      <button class="download-btn" title="Download ${safeText(file.name)}" aria-label="Download ${safeText(file.name)}" data-download="${safeText(file.downloadURL)}">↓</button>
+      <div class="file-actions">
+        <button class="row-action preview-btn" type="button" data-preview="${safeText(file.id)}" title="Preview file" aria-label="Preview ${safeText(file.name)}">◉</button>
+        <button class="row-action favourite-btn ${fav ? "is-favourite" : ""}" type="button" data-favourite="${safeText(file.id)}" title="${fav ? "Remove favourite" : "Add favourite"}" aria-label="${fav ? "Remove from" : "Add to"} favourites">${fav ? "★" : "☆"}</button>
+        <button class="download-btn" title="Download ${safeText(file.name)}" aria-label="Download ${safeText(file.name)}" data-download="${safeText(file.downloadURL)}">↓</button>
+      </div>
     </div>`;
   }).join("");
 }
@@ -268,6 +329,14 @@ document.querySelectorAll(".nav-item").forEach(button => button.addEventListener
   $("sidebar").classList.remove("open");
 }));
 fileList.addEventListener("click", event => {
+  const favouriteButton = event.target.closest("[data-favourite]");
+  if (favouriteButton) { toggleFavourite(favouriteButton.dataset.favourite); return; }
+  const previewButton = event.target.closest("[data-preview]");
+  if (previewButton) {
+    const file = allFiles.find(item => item.id === previewButton.dataset.preview);
+    if (file) openPreview(file);
+    return;
+  }
   const button = event.target.closest("[data-download]");
   if (!button) return;
   const url = button.dataset.download;
@@ -280,6 +349,14 @@ fileList.addEventListener("click", event => {
   document.body.appendChild(link);
   link.click();
   link.remove();
+});
+document.querySelectorAll("[data-close-preview]").forEach(button => button.addEventListener("click", closePreview));
+document.addEventListener("keydown", event => { if (event.key === "Escape" && !$("previewModal").hidden) closePreview(); });
+$("viewToggle").addEventListener("click", () => {
+  viewMode = viewMode === "list" ? "grid" : "list";
+  $("viewToggle").textContent = viewMode === "list" ? "▦" : "☷";
+  $("viewToggle").setAttribute("aria-label", viewMode === "list" ? "Switch to grid view" : "Switch to list view");
+  renderFiles();
 });
 const dropZone = $("dropZone");
 ["dragenter","dragover"].forEach(name => dropZone.addEventListener(name, event => {
