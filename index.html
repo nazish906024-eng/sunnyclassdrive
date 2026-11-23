@@ -26,6 +26,7 @@
         <button class="nav-item active" data-filter="all"><span>▦</span> All files <span class="nav-count" id="allCount">0</span></button>
         <button class="nav-item" data-filter="RECENT"><span>◷</span> Recently viewed</button>
         <button class="nav-item" data-filter="DOWNLOADS"><span>↓</span> Download history</button>
+        <button class="nav-item" id="notesNavButton" type="button"><span>✎</span> My offline notes</button>
         <button class="nav-item" data-filter="PDF"><span>▤</span> PDF documents</button>
         <button class="nav-item" data-filter="PPT"><span>▧</span> Presentations</button>
         <button class="nav-item" data-filter="DOC"><span>▤</span> Documents</button>
@@ -85,6 +86,7 @@
             <div class="file-tools">
               <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search files..." /></label>
               <button class="view-toggle" id="viewToggle" type="button" aria-label="Switch to grid view" title="Switch view">▦</button>
+              <select id="classFilter" aria-label="Filter by class"><option value="all">All classes</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option></select>
               <select id="subjectFilter" aria-label="Filter by subject"><option value="all">All subjects</option><option value="Mathematics">Mathematics</option><option value="Science">Science</option><option value="English">English</option><option value="Social Science">Social Science</option><option value="Other">Other</option></select>
               <select id="sortSelect" aria-label="Sort files">
                 <option value="newest">Newest first</option>
