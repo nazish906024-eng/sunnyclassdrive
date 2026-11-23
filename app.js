@@ -92,8 +92,8 @@ function recordDownload(file) {
   saveLocalList("scd-downloads", downloadHistory);
 }
 function classOf(file) {
-  const match = String(file.name || "").match(/(?:class|grade|std|standard)?\s*(6|7|8|9|10|11|12)(?:th)?/i);
-  return match ? match[1] : "Other";
+  const match = String(file.name || "").match(/(?:class|grade|std|standard)\s*(6|7|8|9|10|11|12)\b|\b(6|7|8|9|10|11|12)(?:th)?\s*(?:class|grade|std|standard)\b/i);
+  return match ? (match[1] || match[2]) : "Other";
 }
 function subjectOf(file) {
   const name = String(file.name || "").toLowerCase();
