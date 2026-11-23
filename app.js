@@ -74,6 +74,51 @@ function getFavouriteIds() {
 }
 let favouriteIds = getFavouriteIds();
 let viewMode = "list";
+function readLocalList(key) {
+  try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) { return []; }
+}
+let recentIds = readLocalList("scd-recent").slice(0, 40);
+let downloadHistory = readLocalList("scd-downloads").slice(0, 40);
+function saveLocalList(key, list) {
+  try { localStorage.setItem(key, JSON.stringify(list.slice(0, 40))); }
+  catch (_) { toast("Device storage is full; local history could not be saved."); }
+}
+function recordRecent(id) {
+  recentIds = [id, ...recentIds.filter(item => item !== id)].slice(0, 40);
+  saveLocalList("scd-recent", recentIds);
+}
+function recordDownload(file) {
+  downloadHistory = [{ id:file.id, name:file.name, at:Date.now() }, ...downloadHistory.filter(item => item.id !== file.id)].slice(0, 40);
+  saveLocalList("scd-downloads", downloadHistory);
+}
+function subjectOf(file) {
+  const name = String(file.name || "").toLowerCase();
+  if (/math|algebra|geometry|trigon| गणित/.test(name)) return "Mathematics";
+  if (/science|physics|chemistry|biology|lab|experiment/.test(name)) return "Science";
+  if (/english|grammar|literature|poem|story/.test(name)) return "English";
+  if (/history|geography|civics|political|economics|social.?science|sst/.test(name)) return "Social Science";
+  return "Other";
+}
+function getFilteredBaseFiles() {
+  if (activeFilter === "RECENT") return recentIds.map(id => allFiles.find(file => file.id === id)).filter(Boolean);
+  if (activeFilter === "DOWNLOADS") return downloadHistory.map(item => allFiles.find(file => file.id === item.id)).filter(Boolean);
+  return allFiles;
+}
+function toggleTheme() {
+  const light = document.body.classList.toggle("light-theme");
+  try { localStorage.setItem("scd-theme", light ? "light" : "dark"); } catch (_) {}
+  $("themeToggle").textContent = light ? "☾" : "☼";
+  $("themeToggle").setAttribute("aria-label", light ? "Switch to dark theme" : "Switch to light theme");
+}
+function applySavedTheme() {
+  let theme = "dark";
+  try { theme = localStorage.getItem("scd-theme") || "dark"; } catch (_) {}
+  document.body.classList.toggle("light-theme", theme === "light");
+  if ($("themeToggle")) {
+    $("themeToggle").textContent = theme === "light" ? "☾" : "☼";
+    $("themeToggle").setAttribute("aria-label", theme === "light" ? "Switch to dark theme" : "Switch to light theme");
+  }
+}
 
 function toggleFavourite(id) {
   if (favouriteIds.has(id)) favouriteIds.delete(id);
@@ -82,7 +127,7 @@ function toggleFavourite(id) {
   catch (_) { toast("Could not save favourites on this device."); }
   renderFiles();
 }
-function openPreview(file) {
+function openPreview(file) {\n  recordRecent(file.id);
   const modal = $("previewModal");
   const body = $("previewBody");
   const title = $("previewTitle");
@@ -122,7 +167,7 @@ function closePreview() {
 }
 function renderFiles() {
   const search = $("searchInput").value.trim().toLowerCase();
-  let shown = allFiles.filter(file => {
+  const subjectFilter = $("subjectFilter")?.value || "all";\n  let shown = getFilteredBaseFiles().filter(file => {
     const matchesCategory = activeFilter === "all" || activeFilter === "FAVOURITES"
       ? (activeFilter !== "FAVOURITES" || favouriteIds.has(file.id))
       : category(file) === activeFilter;
@@ -143,7 +188,7 @@ function renderFiles() {
   $("totalDocs").textContent = allFiles.filter(f => ["PDF","DOC"].includes(category(f))).length;
   $("allCount").textContent = allFiles.length;
   $("favouriteCount").textContent = favouriteIds.size;
-  $("filesHeading").textContent = activeFilter === "all" ? "Recent files" : activeFilter === "FAVOURITES" ? "Favourite files" : `${activeFilter} files`;
+  $("filesHeading").textContent = activeFilter === "all" ? "All files" : activeFilter === "FAVOURITES" ? "Favourite files" : activeFilter === "RECENT" ? "Recently viewed" : activeFilter === "DOWNLOADS" ? "Download history" : `${activeFilter} files`;
   fileList.classList.toggle("grid-view", viewMode === "grid");
   fileList.parentElement.classList.toggle("grid-mode", viewMode === "grid");
 
@@ -162,7 +207,7 @@ function renderFiles() {
       <div class="file-meta file-size">${formatSize(file.size)}</div>
       <div class="file-meta file-date">${formatDate(file.createdAt)}</div>
       <div class="file-actions">
-        <button class="row-action preview-btn" type="button" data-preview="${safeText(file.id)}" title="Preview file" aria-label="Preview ${safeText(file.name)}">◉</button>
+        <button class="row-action share-btn" type="button" data-share="${safeText(file.id)}" title="Share file" aria-label="Share ${safeText(file.name)}">↗</button>\n        <button class="row-action preview-btn" type="button" data-preview="${safeText(file.id)}" title="Preview file" aria-label="Preview ${safeText(file.name)}">◉</button>
         <button class="row-action favourite-btn ${fav ? "is-favourite" : ""}" type="button" data-favourite="${safeText(file.id)}" title="${fav ? "Remove favourite" : "Add favourite"}" aria-label="${fav ? "Remove from" : "Add to"} favourites">${fav ? "★" : "☆"}</button>
         <button class="download-btn" title="Download ${safeText(file.name)}" aria-label="Download ${safeText(file.name)}" data-download="${safeText(file.downloadURL)}">↓</button>
       </div>
@@ -320,7 +365,7 @@ $("browseBtn").addEventListener("click", () => currentUser ? $("fileInput").clic
 $("uploadTopBtn").addEventListener("click", () => currentUser ? $("fileInput").click() : toast("Please sign in to upload."));
 $("fileInput").addEventListener("change", event => handleFiles(event.target.files));
 $("searchInput").addEventListener("input", renderFiles);
-$("sortSelect").addEventListener("change", renderFiles);
+$("sortSelect").addEventListener("change", renderFiles);\n$("subjectFilter").addEventListener("change", renderFiles);\n$("themeToggle").addEventListener("click", toggleTheme);\napplySavedTheme();
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
   document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
   button.classList.add("active");
@@ -332,7 +377,7 @@ document.querySelectorAll(".nav-item").forEach(button => button.addEventListener
 fileList.addEventListener("click", event => {
   const favouriteButton = event.target.closest("[data-favourite]");
   if (favouriteButton) { toggleFavourite(favouriteButton.dataset.favourite); return; }
-  const previewButton = event.target.closest("[data-preview]");
+  const shareButton = event.target.closest("[data-share]");\n  if (shareButton) {\n    const file = allFiles.find(item => item.id === shareButton.dataset.share);\n    if (file?.downloadURL) {\n      const shareData = { title:file.name, text:"Shared from SunnyClassDrive", url:file.downloadURL };\n      if (navigator.share) navigator.share(shareData).catch(() => {});\n      else if (navigator.clipboard?.writeText) navigator.clipboard.writeText(file.downloadURL).then(() => toast("Share link copied."), () => toast("Could not copy link. Open the file and copy its URL."));\n      else toast("Open the file, then copy its address to share.");\n    }\n    return;\n  }\n  const previewButton = event.target.closest("[data-preview]");
   if (previewButton) {
     const file = allFiles.find(item => item.id === previewButton.dataset.preview);
     if (file) openPreview(file);
@@ -352,7 +397,39 @@ fileList.addEventListener("click", event => {
   link.remove();
 });
 document.querySelectorAll("[data-close-preview]").forEach(button => button.addEventListener("click", closePreview));
-document.addEventListener("keydown", event => { if (event.key === "Escape" && !$("previewModal").hidden) closePreview(); });
+const utilityModal = $("utilityModal");
+function openUtility(title, content) {
+  $("utilityTitle").textContent = title;
+  $("utilityContent").innerHTML = content;
+  utilityModal.hidden = false;
+  document.body.classList.add("modal-open");
+}
+function closeUtility() {
+  utilityModal.hidden = true;
+  document.body.classList.remove("modal-open");
+}
+document.querySelectorAll("[data-close-utility]").forEach(node => node.addEventListener("click", closeUtility));
+$("shortcutsBtn").addEventListener("click", () => openUtility("Keyboard shortcuts", '<p><kbd>Ctrl</kbd> + <kbd>K</kbd> or <kbd>/</kbd> — Search files</p><p><kbd>Esc</kbd> — Close open dialog</p><p><kbd>G</kbd> — Switch list/grid view</p>'));
+$("feedbackBtn").addEventListener("click", () => {
+  const subject = encodeURIComponent("SunnyClassDrive feedback");
+  const body = encodeURIComponent("Hi, I would like to share feedback about SunnyClassDrive:\\n\\n");
+  window.location.href = "mailto:nazish906024@gmail.com?subject=" + subject + "&body=" + body;
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    if (!$("previewModal").hidden) closePreview();
+    if (!utilityModal.hidden) closeUtility();
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+    event.preventDefault(); $("searchInput").focus(); $("searchInput").select();
+  } else if (event.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {
+    event.preventDefault(); $("searchInput").focus();
+  } else if (event.key.toLowerCase() === "g" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {
+    viewMode = viewMode === "list" ? "grid" : "list";
+    $("viewToggle").textContent = viewMode === "list" ? "▦" : "☷";
+    renderFiles();
+  }
+});
 $("viewToggle").addEventListener("click", () => {
   viewMode = viewMode === "list" ? "grid" : "list";
   $("viewToggle").textContent = viewMode === "list" ? "▦" : "☷";
