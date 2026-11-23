@@ -101,3 +101,5 @@ body.modal-open{overflow:hidden}
   .preview-dialog{max-height:92vh}
   .preview-frame{height:62vh}
 }
+
+.file-list-wrap.grid-mode .file-list-head{display:none}
