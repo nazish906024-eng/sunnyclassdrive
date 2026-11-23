@@ -91,6 +91,10 @@ function recordDownload(file) {
   downloadHistory = [{ id:file.id, name:file.name, at:Date.now() }, ...downloadHistory.filter(item => item.id !== file.id)].slice(0, 40);
   saveLocalList("scd-downloads", downloadHistory);
 }
+function classOf(file) {
+  const match = String(file.name || "").match(/(?:class|grade|std|standard)?\s*(6|7|8|9|10|11|12)(?:th)?/i);
+  return match ? match[1] : "Other";
+}
 function subjectOf(file) {
   const name = String(file.name || "").toLowerCase();
   if (/math|algebra|geometry|trigon| गणित/.test(name)) return "Mathematics";
@@ -174,7 +178,10 @@ function renderFiles() {
       ? true
       : activeFilter === "FAVOURITES" ? favouriteIds.has(file.id) : category(file) === activeFilter;
     const matchesSearch = String(file.name || "").toLowerCase().includes(search);
-    return matchesCategory && matchesSearch;
+    const matchesSubject = subjectFilter === "all" || subjectOf(file) === subjectFilter;
+    const classFilter = $("classFilter")?.value || "all";
+    const matchesClass = classFilter === "all" || classOf(file) === classFilter;
+    return matchesCategory && matchesSearch && matchesSubject && matchesClass;
   });
   const sort = $("sortSelect").value;
   shown.sort((a,b) => {
@@ -370,6 +377,16 @@ $("fileInput").addEventListener("change", event => handleFiles(event.target.file
 $("searchInput").addEventListener("input", renderFiles);
 $("sortSelect").addEventListener("change", renderFiles);
 $("subjectFilter").addEventListener("change", renderFiles);
+$("classFilter").addEventListener("change", renderFiles);
+$("notesNavButton").addEventListener("click", () => {
+  let saved = ""; try { saved = localStorage.getItem("scd-offline-notes") || ""; } catch (_) {}
+  openUtility("My offline notes", '<p>These notes are stored only in this browser on this device.</p><textarea id="offlineNotes" rows="9" style="width:100%;resize:vertical;background:#0b1728;color:#edf3ff;border:1px solid #405a78;border-radius:9px;padding:11px;font:12px DM Sans,sans-serif"></textarea><button id="saveOfflineNotes" class="primary-btn" type="button">Save notes</button>');
+  $("offlineNotes").value = saved;
+  $("saveOfflineNotes").addEventListener("click", () => {
+    try { localStorage.setItem("scd-offline-notes", $("offlineNotes").value); toast("Notes saved on this device."); closeUtility(); }
+    catch (_) { toast("Could not save notes. Device storage may be full."); }
+  });
+});
 $("themeToggle").addEventListener("click", toggleTheme);
 applySavedTheme();
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
