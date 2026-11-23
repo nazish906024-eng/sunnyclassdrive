@@ -24,6 +24,8 @@
         </a>
         <div class="side-label">WORKSPACE</div>
         <button class="nav-item active" data-filter="all"><span>▦</span> All files <span class="nav-count" id="allCount">0</span></button>
+        <button class="nav-item" data-filter="RECENT"><span>◷</span> Recently viewed</button>
+        <button class="nav-item" data-filter="DOWNLOADS"><span>↓</span> Download history</button>
         <button class="nav-item" data-filter="PDF"><span>▤</span> PDF documents</button>
         <button class="nav-item" data-filter="PPT"><span>▧</span> Presentations</button>
         <button class="nav-item" data-filter="DOC"><span>▤</span> Documents</button>
@@ -46,7 +48,7 @@
           <div class="breadcrumb">Workspace <span>/</span> <b id="breadcrumbName">All files</b></div>
           <div class="top-actions">
             <button class="install-btn" id="installBtn" hidden>↓ Install app</button>
-            <span class="public-pill"><i></i> Public workspace</span>
+            <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light theme" title="Toggle theme">☼</button><span class="public-pill"><i></i> Public workspace</span>
           </div>
         </header>
 
@@ -83,6 +85,7 @@
             <div class="file-tools">
               <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search files..." /></label>
               <button class="view-toggle" id="viewToggle" type="button" aria-label="Switch to grid view" title="Switch view">▦</button>
+              <select id="subjectFilter" aria-label="Filter by subject"><option value="all">All subjects</option><option value="Mathematics">Mathematics</option><option value="Science">Science</option><option value="English">English</option><option value="Social Science">Social Science</option><option value="Other">Other</option></select>
               <select id="sortSelect" aria-label="Sort files">
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
@@ -98,6 +101,7 @@
             </div>
           </div>
           <p class="privacy-note">Public workspace: upload only files that are safe for your school community to access.</p>
+          <div class="library-tools"><button class="secondary-btn" id="feedbackBtn" type="button">Send feedback</button><button class="secondary-btn" id="shortcutsBtn" type="button">Keyboard shortcuts</button><span id="localDataNote">Recent activity and preferences are saved on this device.</span></div>
         </section>
 
         <footer class="site-footer">
@@ -118,6 +122,7 @@
         <footer class="preview-actions"><a class="secondary-btn" id="previewOpen" target="_blank" rel="noopener">Open in new tab</a><a class="primary-btn" id="previewDownload" target="_blank" rel="noopener">Download file</a></footer>
       </section>
     </div>
+    <div class="utility-modal" id="utilityModal" hidden role="dialog" aria-modal="true" aria-labelledby="utilityTitle"><div class="utility-backdrop" data-close-utility></div><section class="utility-dialog"><header><h2 id="utilityTitle">Keyboard shortcuts</h2><button type="button" data-close-utility aria-label="Close">×</button></header><div id="utilityContent"><p><kbd>Ctrl</kbd> + <kbd>K</kbd> or <kbd>/</kbd> — Search files</p><p><kbd>Esc</kbd> — Close open dialog</p><p><kbd>G</kbd> — Switch list/grid view</p></div></section></div>
     <div class="toast" id="toast" role="status"></div>
     <div class="upload-progress" id="uploadProgress" hidden>
       <div class="progress-head"><strong id="progressTitle">Uploading files</strong><span id="progressPercent">0%</span></div>
