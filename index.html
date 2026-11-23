@@ -28,6 +28,7 @@
         <button class="nav-item" data-filter="PPT"><span>▧</span> Presentations</button>
         <button class="nav-item" data-filter="DOC"><span>▤</span> Documents</button>
         <button class="nav-item" data-filter="IMAGE"><span>▧</span> Images</button>
+        <button class="nav-item" data-filter="FAVOURITES"><span>☆</span> Favourites <span class="nav-count" id="favouriteCount">0</span></button>
         <div class="sidebar-bottom">
           <div class="storage-card">
             <div class="storage-icon">☁</div>
@@ -81,6 +82,7 @@
             <div><p class="eyebrow">LIBRARY</p><h2 id="filesHeading">Recent files</h2></div>
             <div class="file-tools">
               <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search files..." /></label>
+              <button class="view-toggle" id="viewToggle" type="button" aria-label="Switch to grid view" title="Switch view">▦</button>
               <select id="sortSelect" aria-label="Sort files">
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
@@ -108,6 +110,14 @@
       </main>
     </div>
 
+    <div class="preview-modal" id="previewModal" hidden role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+      <div class="preview-backdrop" data-close-preview></div>
+      <section class="preview-dialog">
+        <header class="preview-header"><div><p class="eyebrow">FILE PREVIEW</p><h2 id="previewTitle">Preview</h2></div><button class="preview-close" type="button" data-close-preview aria-label="Close preview">×</button></header>
+        <div class="preview-body" id="previewBody"></div>
+        <footer class="preview-actions"><a class="secondary-btn" id="previewOpen" target="_blank" rel="noopener">Open in new tab</a><a class="primary-btn" id="previewDownload" target="_blank" rel="noopener">Download file</a></footer>
+      </section>
+    </div>
     <div class="toast" id="toast" role="status"></div>
     <div class="upload-progress" id="uploadProgress" hidden>
       <div class="progress-head"><strong id="progressTitle">Uploading files</strong><span id="progressPercent">0%</span></div>
