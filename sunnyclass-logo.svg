@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 250" role="img" aria-labelledby="title desc">
+<title id="title">SunnyClass</title><desc id="desc">Sunrise over an open book with the tagline Upload at Home, Learn in School.</desc>
+<defs>
+ <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe66b"/><stop offset="1" stop-color="#ff8a00"/></linearGradient>
+ <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#174ea6"/></linearGradient>
+</defs>
+<g transform="translate(18 12)">
+ <circle cx="105" cy="91" r="63" fill="url(#sun)"/>
+ <g stroke="#ffb21a" stroke-width="9" stroke-linecap="round">
+  <path d="M105 5V-2M48 25 37 13M162 25l11-12M25 82H8M182 82h17"/>
+ </g>
+ <path d="M23 119Q66 89 105 125Q145 89 187 119L187 184Q145 154 105 190Q65 154 23 184Z" fill="url(#blue)" stroke="#0b3477" stroke-width="5" stroke-linejoin="round"/>
+ <path d="M105 126V190" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+ <path d="M65 68 105 47l40 21-40 20Z" fill="#102e68"/>
+ <path d="M82 78v17q23 17 46 0V78" fill="#174ea6"/>
+ <path d="M145 68v22" stroke="#ffb21a" stroke-width="4"/><circle cx="145" cy="94" r="5" fill="#ffb21a"/>
+</g>
+<text x="235" y="112" font-family="Arial, sans-serif" font-size="77" font-weight="800" letter-spacing="-3" fill="#12346b">Sunny<tspan fill="#f28a00">Class</tspan></text>
+<path d="M239 133Q490 157 738 132" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+<text x="240" y="185" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing=".6" fill="#173d78">UPLOAD AT HOME</text>
+<circle cx="503" cy="175" r="5" fill="#f28a00"/>
+<text x="523" y="185" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing=".4" fill="#f28a00">LEARN IN SCHOOL</text>
+</svg>
