@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="SunnyClass" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="preload" href="./sunnyclass-logo.svg" as="image" type="image/svg+xml" />
     <title>SunnyClass — Upload at Home | Learn in School</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +19,7 @@
   </head>
   <body>
     <div class="brand-intro" id="brandIntro" role="status" aria-label="SunnyClass — Upload at Home, Learn in School">
-      <img src="sunnyclass-logo.svg" alt="SunnyClass — Upload at Home, Learn in School" />
+      <img src="./sunnyclass-logo.svg" alt="SunnyClass — Upload at Home, Learn in School" fetchpriority="high" decoding="sync" />
     </div>
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
