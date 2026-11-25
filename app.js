@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp
+  getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, deleteDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -31,6 +31,7 @@ let activeFilter = "all";
 let db, auth, currentUser = null;
 const SUPABASE_URL = "https://vwewwowlpaqdtutyniou.supabase.co";
 const EDGE_UPLOAD_URL = SUPABASE_URL + "/functions/v1/upload-file";
+const EDGE_DELETE_URL = SUPABASE_URL + "/functions/v1/delete-file";
 
 function toast(message) {
   toastEl.textContent = message;
@@ -156,6 +157,7 @@ function renderFiles() {
     const iconClass = type === "PDF" ? "pdf" : type === "PPT" ? "ppt" : type === "DOC" ? "doc" : type === "IMAGE" ? "image" : "other";
     const icon = type === "PDF" ? "PDF" : type === "PPT" ? "PPT" : type === "DOC" ? "DOC" : type === "IMAGE" ? "IMG" : "FILE";
     const fav = favouriteIds.has(file.id);
+    const isOwner = !!currentUser && file.uploadedBy === currentUser.uid;
     return `<div class="file-row">
       <div class="file-name"><div class="file-symbol ${iconClass}">${icon}</div><div style="min-width:0"><strong title="${safeText(file.name)}">${safeText(file.name)}</strong><small>${safeText(file.originalName || file.name)}</small></div></div>
       <div class="file-meta"><span class="type-tag">${type}</span></div>
@@ -165,6 +167,7 @@ function renderFiles() {
         <button class="row-action preview-btn" type="button" data-preview="${safeText(file.id)}" title="Preview file" aria-label="Preview ${safeText(file.name)}">◉</button>
         <button class="row-action favourite-btn ${fav ? "is-favourite" : ""}" type="button" data-favourite="${safeText(file.id)}" title="${fav ? "Remove favourite" : "Add favourite"}" aria-label="${fav ? "Remove from" : "Add to"} favourites">${fav ? "★" : "☆"}</button>
         <button class="download-btn" title="Download ${safeText(file.name)}" aria-label="Download ${safeText(file.name)}" data-download="${safeText(file.downloadURL)}">↓</button>
+        ${isOwner ? `<button class="row-action" type="button" data-rename="${safeText(file.id)}" title="Rename file" aria-label="Rename ${safeText(file.name)}">✎</button><button class="row-action delete-file-btn" type="button" data-delete="${safeText(file.id)}" title="Delete file" aria-label="Delete ${safeText(file.name)}">×</button>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -329,7 +332,39 @@ document.querySelectorAll(".nav-item").forEach(button => button.addEventListener
   renderFiles();
   $("sidebar").classList.remove("open");
 }));
-fileList.addEventListener("click", event => {
+fileList.addEventListener("click", async event => {
+  const renameButton = event.target.closest("[data-rename]");
+  if (renameButton) {
+    const file = allFiles.find(item => item.id === renameButton.dataset.rename);
+    if (!file || !currentUser || file.uploadedBy !== currentUser.uid) return toast("You can only rename files you uploaded.");
+    const entered = window.prompt("Enter a new file name:", file.name);
+    if (entered === null) return;
+    const newName = entered.trim();
+    if (!newName || newName.length > 100 || /[\\/\\\\]/.test(newName)) return toast("Use a name of 1–100 characters without slashes.");
+    try {
+      await updateDoc(doc(db, "schoolFiles", file.id), { name: newName, originalName: newName });
+      toast("File renamed successfully.");
+    } catch (error) { console.error(error); toast(error.message || "Could not rename file."); }
+    return;
+  }
+  const deleteButton = event.target.closest("[data-delete]");
+  if (deleteButton) {
+    const file = allFiles.find(item => item.id === deleteButton.dataset.delete);
+    if (!file || !currentUser || file.uploadedBy !== currentUser.uid) return toast("You can only delete files you uploaded.");
+    if (!window.confirm('Delete "' + file.name + '" permanently? This cannot be undone.')) return;
+    deleteButton.disabled = true;
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch(EDGE_DELETE_URL, { method: "POST", headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ fileId: file.id }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not delete file from storage.");
+      await deleteDoc(doc(db, "schoolFiles", file.id));
+      favouriteIds.delete(file.id);
+      try { localStorage.setItem("scd-favourites", JSON.stringify([...favouriteIds])); } catch (_) {}
+      toast("File deleted successfully.");
+    } catch (error) { console.error(error); toast(error.message || "Could not delete file."); deleteButton.disabled = false; }
+    return;
+  }
   const favouriteButton = event.target.closest("[data-favourite]");
   if (favouriteButton) { toggleFavourite(favouriteButton.dataset.favourite); return; }
   const previewButton = event.target.closest("[data-preview]");
