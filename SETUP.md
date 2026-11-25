@@ -36,7 +36,16 @@ supabase secrets set FIREBASE_WEB_API_KEY=YOUR_FIREBASE_WEB_API_KEY SUPABASE_URL
 ```
 Replace placeholders in your own terminal. Do not share the service-role key.
 
-## 5. Deploy the delete function\nThe source is `supabase/functions/delete-file/index.ts`. Deploy it with JWT verification OFF; it validates the Firebase ID token itself. It uses the existing `FIREBASE_WEB_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` secrets.\n\n```bash\nsupabase functions deploy delete-file --no-verify-jwt\n```\n\nAlso publish the updated `firestore.rules` in Firebase Console → Firestore Database → Rules. Without the updated rules, rename and metadata deletion will be rejected.\n\n## 6. Test
+## 5. Deploy the delete function
+The source is `supabase/functions/delete-file/index.ts`. Deploy it with JWT verification OFF; it validates the Firebase ID token itself. It uses the existing `FIREBASE_WEB_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` secrets.
+
+```bash
+supabase functions deploy delete-file --no-verify-jwt
+```
+
+Also publish the updated `firestore.rules` in Firebase Console → Firestore Database → Rules. Without the updated rules, rename and metadata deletion will be rejected.
+
+## 6. Test
 1. Open SunnyClassDrive and sign in with an enabled provider.
 2. Upload a small PDF.
 3. Check that it appears in the library.
