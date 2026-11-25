@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "SunnyClassDrive — School File Hub",
-  "short_name": "SunnyClassDrive",
-  "description": "Upload at home. Find and download at school.",
+  "name": "SunnyClass — Upload at Home | Learn in School",
+  "short_name": "SunnyClass",
+  "description": "Upload at Home | Learn in School",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
