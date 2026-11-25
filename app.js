@@ -446,4 +446,13 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   });
 }
 
+// Show the SunnyClass logo intro briefly before revealing the workspace.
+const brandIntro = $("brandIntro");
+if (brandIntro) {
+  window.setTimeout(() => {
+    brandIntro.classList.add("is-leaving");
+    window.setTimeout(() => brandIntro.remove(), 650);
+  }, 2300);
+}
+
 connectFirebase();
