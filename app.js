@@ -446,13 +446,25 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   });
 }
 
-// Show the SunnyClass logo intro briefly before revealing the workspace.
+// Keep the intro visible until its logo has loaded, then show it before fading to the workspace.
 const brandIntro = $("brandIntro");
 if (brandIntro) {
-  window.setTimeout(() => {
-    brandIntro.classList.add("is-leaving");
-    window.setTimeout(() => brandIntro.remove(), 650);
-  }, 2300);
+  const introLogo = brandIntro.querySelector("img");
+  let introStarted = false;
+  const showWorkspace = () => {
+    if (introStarted) return;
+    introStarted = true;
+    window.setTimeout(() => {
+      brandIntro.classList.add("is-leaving");
+      window.setTimeout(() => brandIntro.remove(), 650);
+    }, 1800);
+  };
+  if (introLogo && introLogo.complete && introLogo.naturalWidth > 0) showWorkspace();
+  else if (introLogo) {
+    introLogo.addEventListener("load", showWorkspace, { once: true });
+    introLogo.addEventListener("error", showWorkspace, { once: true });
+    window.setTimeout(showWorkspace, 4000);
+  } else showWorkspace();
 }
 
 connectFirebase();
