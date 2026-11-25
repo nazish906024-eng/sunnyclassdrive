@@ -103,3 +103,9 @@ body.modal-open{overflow:hidden}
 }
 
 .file-list-wrap.grid-mode .file-list-head{display:none}
+
+
+/* SunnyClass approved brand logo */
+.brand{padding:0 5px 40px;min-height:62px}
+.brand-logo{display:block;width:100%;max-width:205px;height:auto;object-fit:contain}
+@media(max-width:680px){.brand-logo{max-width:185px}}
