@@ -1,4 +1,4 @@
-const CACHE_NAME = "sunnyclass-shell-v5";
+const CACHE_NAME = "sunnyclass-shell-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,7 +6,8 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.webmanifest",
   "./icon.svg",
-  "./sunnyclass-logo.svg"
+  "./sunnyclass-logo.svg",
+  "./privacy-policy.html"
 ];
 
 self.addEventListener("install", event => {
