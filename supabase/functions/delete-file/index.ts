@@ -24,7 +24,20 @@ serve(async (req) => {
     if(!path||path.includes("..")||path.startsWith("/")) return Response.json({error:"Stored file path is invalid."},{status:400,headers:cors});
     const encodedPath=path.split("/").map(encodeURIComponent).join("/");
     const removed=await fetch(url+"/storage/v1/object/school-files/"+encodedPath,{method:"DELETE",headers:{"Authorization":"Bearer "+service,"apikey":service}});
-    if(!removed.ok && removed.status!==404){const storageError=await removed.text();console.error("Storage delete failed:",removed.status,storageError);return Response.json({error:"Could not remove file from storage.",storageStatus:removed.status,storageError:storageError.slice(0,1000)},{status:502,headers:cors});}
+    if(!removed.ok){
+      const storageError=await removed.text();
+      let missingObject=removed.status===404;
+      try {
+        const detail=JSON.parse(storageError);
+        missingObject=missingObject || detail.code==="NoSuchKey" || (detail.statusCode==="404" && detail.error==="not_found");
+      } catch (_) {}
+      // If the object was manually removed already, continue so the stale Firestore record can be deleted.
+      if(!missingObject){
+        console.error("Storage delete failed:",removed.status,storageError);
+        return Response.json({error:"Could not remove file from storage.",storageStatus:removed.status,storageError:storageError.slice(0,1000)},{status:502,headers:cors});
+      }
+      console.info("Storage object was already missing; continuing to remove its Firestore record.");
+    }
     return Response.json({success:true},{headers:cors});
   } catch(error){console.error(error);return Response.json({error:"Unexpected delete error."},{status:500,headers:cors});}
 });
