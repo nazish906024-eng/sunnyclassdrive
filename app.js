@@ -357,7 +357,10 @@ fileList.addEventListener("click", async event => {
       const token = await currentUser.getIdToken();
       const response = await fetch(EDGE_DELETE_URL, { method: "POST", headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ fileId: file.id }) });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Could not delete file from storage.");
+      if (!response.ok) {
+        const detail = [result.error, result.storageStatus ? "Storage status: " + result.storageStatus : "", result.storageError || ""].filter(Boolean).join(" — ");
+        throw new Error(detail || "Could not delete file from storage.");
+      }
       await deleteDoc(doc(db, "schoolFiles", file.id));
       favouriteIds.delete(file.id);
       try { localStorage.setItem("scd-favourites", JSON.stringify([...favouriteIds])); } catch (_) {}
