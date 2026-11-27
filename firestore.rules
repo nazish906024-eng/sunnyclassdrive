@@ -10,7 +10,9 @@ service cloud.firestore {
         && request.resource.data.size > 0
         && request.resource.data.size <= 25 * 1024 * 1024
         && request.resource.data.downloadURL is string
-        && request.resource.data.storagePath is string;
+        && request.resource.data.storagePath is string
+        && request.resource.data.className in ['Class 9', 'Class 10']
+        && request.resource.data.subject in ['English', 'Hindi', 'Mathematics', 'Science', 'Social Science'];
       // Admin Firebase Authentication UID.
       allow update: if request.auth != null
         && (resource.data.uploadedBy == request.auth.uid || request.auth.uid == 'PzIm63AR4yZg3yqB5RjecaJ5D4J2')
