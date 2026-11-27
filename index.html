@@ -63,6 +63,11 @@
           <button class="primary-btn" id="uploadTopBtn"><span>＋</span> Upload files</button>
         </section>
 
+        <section class="notice-board">
+          <div class="notice-heading"><div><p class="eyebrow">SCHOOL UPDATES</p><h2>Admin Notice Board</h2></div><button class="secondary-btn" id="postNoticeBtn" hidden>＋ Post notice</button></div>
+          <div id="noticeList" class="notice-list"><p class="notice-empty">Loading announcements…</p></div>
+        </section>
+
         <section class="stats-grid">
           <article class="stat-card"><div class="stat-icon blue">▦</div><div><p>Total files</p><strong id="totalFiles">—</strong></div><span class="stat-caption">In this workspace</span></article>
           <article class="stat-card"><div class="stat-icon purple">▧</div><div><p>Presentations</p><strong id="totalPpt">—</strong></div><span class="stat-caption">PPT / PPTX</span></article>
@@ -72,6 +77,14 @@
         <section class="upload-panel" id="dropZone">
           <div class="upload-illustration">☁<span>↑</span></div>
           <div class="upload-copy">
+            <div class="folder-selects">
+              <label>Class
+                <select id="uploadClass" required><option value="">Choose class</option><option>Class 9</option><option>Class 10</option></select>
+              </label>
+              <label>Subject
+                <select id="uploadSubject" required><option value="">Choose subject</option><option>English</option><option>Hindi</option><option>Mathematics</option><option>Science</option><option>Social Science</option></select>
+              </label>
+            </div>
             <h2>Drop files here to share</h2>
             <p>or choose files from your device. Maximum 25 MB per file.</p>
             <div class="upload-hints"><span>PDF</span><span>PPT / PPTX</span><span>DOC / DOCX</span><span>Images</span></div>
@@ -86,6 +99,8 @@
             <div><p class="eyebrow">LIBRARY</p><h2 id="filesHeading">Recent files</h2></div>
             <div class="file-tools">
               <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search files..." /></label>
+              <select id="classFilter" aria-label="Filter by class"><option value="all">All classes</option><option>Class 9</option><option>Class 10</option></select>
+              <select id="subjectFilter" aria-label="Filter by subject"><option value="all">All subjects</option><option>English</option><option>Hindi</option><option>Mathematics</option><option>Science</option><option>Social Science</option></select>
               <button class="view-toggle" id="viewToggle" type="button" aria-label="Switch to grid view" title="Switch view">▦</button>
               <select id="sortSelect" aria-label="Sort files">
                 <option value="newest">Newest first</option>
