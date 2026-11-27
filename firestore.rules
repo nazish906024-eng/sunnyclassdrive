@@ -11,9 +11,9 @@ service cloud.firestore {
         && request.resource.data.size <= 25 * 1024 * 1024
         && request.resource.data.downloadURL is string
         && request.resource.data.storagePath is string;
-      // Replace SET_ADMIN_UID_HERE with the administrator's Firebase Auth UID before publishing.
+      // Admin Firebase Authentication UID.
       allow update: if request.auth != null
-        && (resource.data.uploadedBy == request.auth.uid || request.auth.uid == 'SET_ADMIN_UID_HERE')
+        && (resource.data.uploadedBy == request.auth.uid || request.auth.uid == 'PzIm63AR4yZg3yqB5RjecaJ5D4J2')
         && request.resource.data.uploadedBy == resource.data.uploadedBy
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'originalName', 'storagePath', 'downloadURL'])
         && request.resource.data.name is string
@@ -22,7 +22,7 @@ service cloud.firestore {
         && request.resource.data.storagePath is string
         && request.resource.data.downloadURL is string;
       allow delete: if request.auth != null
-        && (resource.data.uploadedBy == request.auth.uid || request.auth.uid == 'SET_ADMIN_UID_HERE');
+        && (resource.data.uploadedBy == request.auth.uid || request.auth.uid == 'PzIm63AR4yZg3yqB5RjecaJ5D4J2');
     }
   }
 }
