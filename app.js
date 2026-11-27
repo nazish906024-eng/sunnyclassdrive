@@ -160,7 +160,14 @@ function renderFolderBrowser() {
 
 function renderFiles() {
   renderFolderBrowser();
-  if (!selectedLibrarySubject) return;
+  if (!selectedLibrarySubject) {
+    $("totalFiles").textContent = allFiles.length;
+    $("totalPpt").textContent = allFiles.filter(f => category(f) === "PPT").length;
+    $("totalDocs").textContent = allFiles.filter(f => ["PDF","DOC"].includes(category(f))).length;
+    $("allCount").textContent = allFiles.length;
+    $("favouriteCount").textContent = favouriteIds.size;
+    return;
+  }
   const search = $("searchInput").value.trim().toLowerCase();
   const selectedClass = selectedLibraryClass || "all";
   const selectedSubject = selectedLibrarySubject || "all";
