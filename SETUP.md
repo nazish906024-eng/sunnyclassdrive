@@ -16,7 +16,7 @@ In Firebase Console → Authentication → Settings → Authorized domains, add 
 `nazish906024-eng.github.io`
 
 ## 2. Firestore rules
-Publish the rules from `firestore.rules` in Firebase Console → Firestore Database → Rules. They allow public reads and authenticated creation of file metadata tied to the signed-in user's UID. Updates and deletes are disabled.
+Publish the rules from `firestore.rules` in Firebase Console → Firestore Database → Rules. They allow public reads, authenticated uploads tied to the signed-in user's UID, and rename/delete operations by the file owner or configured administrator.
 
 ## 3. Supabase Storage bucket
 In Supabase Dashboard → Storage, create a bucket named **school-files** and mark it **Public**. Do not create anonymous upload policies. Public access is needed for reading/downloading; the Edge Function performs uploads using its server-side service-role key.
