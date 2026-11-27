@@ -408,19 +408,55 @@ $("noticeList").addEventListener("click", async event => {
   try { await deleteDoc(doc(db, "notices", button.dataset.deleteNotice)); toast("Announcement deleted."); }
   catch (error) { console.error(error); toast("Could not delete announcement."); }
 });
-$("browseBtn").addEventListener("click", () => currentUser ? $("fileInput").click() : toast("Please sign in to upload."));
-$("uploadTopBtn").addEventListener("click", () => currentUser ? $("fileInput").click() : toast("Please sign in to upload."));
+$("browseBtn").addEventListener("click", () => {
+  if (!currentUser) return toast("Please sign in to upload.");
+  if (!CLASSES.includes($("uploadClass").value)) return toast("Please choose Class 9 or Class 10 first.");
+  if (!SUBJECTS.includes($("uploadSubject").value)) return toast("Please choose a subject first.");
+  $("fileInput").click();
+});
+$("uploadTopBtn").addEventListener("click", () => {
+  if (!currentUser) return toast("Please sign in to upload.");
+  $("dropZone").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("uploadClass").focus();
+  toast("Choose a class and subject, then click Browse files.");
+});
 $("fileInput").addEventListener("change", event => handleFiles(event.target.files));
 $("searchInput").addEventListener("input", renderFiles);
-$("classFilter").addEventListener("change", renderFiles);
-$("subjectFilter").addEventListener("change", renderFiles);
 $("sortSelect").addEventListener("change", renderFiles);
+$("folderBrowser").addEventListener("click", event => {
+  const classButton = event.target.closest("[data-class-folder]");
+  const subjectButton = event.target.closest("[data-subject-folder]");
+  const backButton = event.target.closest("[data-folder-back]");
+  if (classButton) {
+    selectedLibraryClass = classButton.dataset.classFolder;
+    selectedLibrarySubject = "";
+    renderFolderBrowser();
+  } else if (subjectButton) {
+    selectedLibrarySubject = subjectButton.dataset.subjectFolder;
+    renderFolderBrowser();
+    renderFiles();
+  } else if (backButton?.dataset.folderBack === "classes") {
+    selectedLibraryClass = "";
+    selectedLibrarySubject = "";
+    renderFolderBrowser();
+  } else if (backButton?.dataset.folderBack === "subjects") {
+    selectedLibrarySubject = "";
+    renderFolderBrowser();
+  }
+});
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
   document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
   button.classList.add("active");
   activeFilter = button.dataset.filter;
   $("breadcrumbName").textContent = button.textContent.trim().replace(/\s+\d+$/, "");
-  renderFiles();
+  if (activeFilter === "all") {
+    selectedLibraryClass = "";
+    selectedLibrarySubject = "";
+    $("searchInput").value = "";
+    renderFolderBrowser();
+  } else if (selectedLibrarySubject) {
+    renderFiles();
+  }
   $("sidebar").classList.remove("open");
 }));
 fileList.addEventListener("click", async event => {
