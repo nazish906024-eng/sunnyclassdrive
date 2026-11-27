@@ -61,7 +61,8 @@ serve(async (req) => {
     if (oldExtension && !newName.toLowerCase().endsWith(oldExtension)) newName += oldExtension;
     if (newName.length > 100) return Response.json({ error: "The file name is too long after keeping its extension." }, { status: 400, headers: cors });
 
-    const newPath = Date.now() + "_" + crypto.randomUUID() + "_" + newName;
+    // Keep each file in its own folder so the visible Storage object name is exactly the renamed filename.
+    const newPath = fileId + "/" + newName;
     const copy = await fetch(url + "/storage/v1/object/copy", {
       method: "POST",
       headers: {
