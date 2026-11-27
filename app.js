@@ -34,7 +34,7 @@ const EDGE_UPLOAD_URL = SUPABASE_URL + "/functions/v1/upload-file";
 const EDGE_DELETE_URL = SUPABASE_URL + "/functions/v1/delete-file";
 const EDGE_RENAME_URL = SUPABASE_URL + "/functions/v1/rename-file";
 // Replace this with your Firebase Authentication UID to enable admin controls.
-const ADMIN_FIREBASE_UID = "SET_ADMIN_UID_HERE";
+const ADMIN_FIREBASE_UID = "PzIm63AR4yZg3yqB5RjecaJ5D4J2";
 
 function toast(message) {
   toastEl.textContent = message;
