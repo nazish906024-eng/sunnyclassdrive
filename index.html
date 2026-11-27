@@ -94,13 +94,13 @@
             accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.webp" />
         </section>
 
-        <section class="files-section">
+        <section class="folder-browser" id="folderBrowser"></section>
+
+        <section class="files-section" id="filesSection" hidden>
           <div class="section-heading">
             <div><p class="eyebrow">LIBRARY</p><h2 id="filesHeading">Recent files</h2></div>
             <div class="file-tools">
               <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search files..." /></label>
-              <select id="classFilter" aria-label="Filter by class"><option value="all">All classes</option><option>Class 9</option><option>Class 10</option></select>
-              <select id="subjectFilter" aria-label="Filter by subject"><option value="all">All subjects</option><option>English</option><option>Hindi</option><option>Mathematics</option><option>Science</option><option>Social Science</option></select>
               <button class="view-toggle" id="viewToggle" type="button" aria-label="Switch to grid view" title="Switch view">▦</button>
               <select id="sortSelect" aria-label="Sort files">
                 <option value="newest">Newest first</option>
