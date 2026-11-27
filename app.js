@@ -355,7 +355,15 @@ fileList.addEventListener("click", async event => {
         body: JSON.stringify({ fileId: file.id, newName })
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Could not rename file.");
+      if (!response.ok) {
+        const detail = [
+          result.error || "Could not rename file.",
+          result.storageStatus ? "Storage status: " + result.storageStatus : "",
+          result.storageError || "",
+          result.firestoreStatus ? "Firestore status: " + result.firestoreStatus : ""
+        ].filter(Boolean).join(" — ");
+        throw new Error(detail);
+      }
       toast(result.warning || "File renamed successfully in SunnyClass and Supabase Storage.");
     } catch (error) { console.error(error); toast(error.message || "Could not rename file."); }
     return;
