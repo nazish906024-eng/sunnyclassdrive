@@ -11,14 +11,18 @@ service cloud.firestore {
         && request.resource.data.size <= 25 * 1024 * 1024
         && request.resource.data.downloadURL is string
         && request.resource.data.storagePath is string;
+      // Replace SET_ADMIN_UID_HERE with the administrator's Firebase Auth UID before publishing.
       allow update: if request.auth != null
-        && resource.data.uploadedBy == request.auth.uid
+        && (resource.data.uploadedBy == request.auth.uid || request.auth.uid == 'SET_ADMIN_UID_HERE')
         && request.resource.data.uploadedBy == resource.data.uploadedBy
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'originalName'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'originalName', 'storagePath', 'downloadURL'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 100;
-      allow delete: if request.auth != null && resource.data.uploadedBy == request.auth.uid;
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.storagePath is string
+        && request.resource.data.downloadURL is string;
+      allow delete: if request.auth != null
+        && (resource.data.uploadedBy == request.auth.uid || request.auth.uid == 'SET_ADMIN_UID_HERE');
     }
   }
 }
