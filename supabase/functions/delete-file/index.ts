@@ -19,7 +19,9 @@ serve(async (req) => {
     const record=await fetch("https://firestore.googleapis.com/v1/projects/"+projectId+"/databases/(default)/documents/schoolFiles/"+fileId,{headers:{"Authorization":"Bearer "+token}});
     if(!record.ok) return Response.json({error:"File record not found or access denied."},{status:404,headers:cors});
     const fields=(await record.json()).fields||{};
-    if(fields.uploadedBy?.stringValue!==user.localId) return Response.json({error:"You can only delete files you uploaded."},{status:403,headers:cors});
+    const adminUid=Deno.env.get("ADMIN_FIREBASE_UID")||"";
+    const isAdmin=!!adminUid && user.localId===adminUid;
+    if(fields.uploadedBy?.stringValue!==user.localId && !isAdmin) return Response.json({error:"You do not have permission to delete this file."},{status:403,headers:cors});
     const path=fields.storagePath?.stringValue;
     if(!path||path.includes("..")||path.startsWith("/")) return Response.json({error:"Stored file path is invalid."},{status:400,headers:cors});
     const encodedPath=path.split("/").map(encodeURIComponent).join("/");
