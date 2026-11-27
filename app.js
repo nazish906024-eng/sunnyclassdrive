@@ -27,7 +27,10 @@ const $ = (id) => document.getElementById(id);
 const fileList = $("fileList");
 const toastEl = $("toast");
 let allFiles = [];
+let allNotices = [];
 let activeFilter = "all";
+const CLASSES = ["Class 9", "Class 10"];
+const SUBJECTS = ["English", "Hindi", "Mathematics", "Science", "Social Science"];
 let db, auth, currentUser = null;
 const SUPABASE_URL = "https://vwewwowlpaqdtutyniou.supabase.co";
 const EDGE_UPLOAD_URL = SUPABASE_URL + "/functions/v1/upload-file";
@@ -126,7 +129,11 @@ function closePreview() {
 }
 function renderFiles() {
   const search = $("searchInput").value.trim().toLowerCase();
+  const selectedClass = $("classFilter")?.value || "all";
+  const selectedSubject = $("subjectFilter")?.value || "all";
   let shown = allFiles.filter(file => {
+    if (selectedClass !== "all" && file.className !== selectedClass) return false;
+    if (selectedSubject !== "all" && file.subject !== selectedSubject) return false;
     const matchesCategory = activeFilter === "all" || activeFilter === "FAVOURITES"
       ? (activeFilter !== "FAVOURITES" || favouriteIds.has(file.id))
       : category(file) === activeFilter;
@@ -164,7 +171,7 @@ function renderFiles() {
     const isAdmin = !!currentUser && ADMIN_FIREBASE_UID !== "SET_ADMIN_UID_HERE" && currentUser.uid === ADMIN_FIREBASE_UID;
     const canManage = isOwner || isAdmin;
     return `<div class="file-row">
-      <div class="file-name"><div class="file-symbol ${iconClass}">${icon}</div><div style="min-width:0"><strong title="${safeText(file.name)}">${safeText(file.name)}</strong><small>${safeText(file.originalName || file.name)}</small></div></div>
+      <div class="file-name"><div class="file-symbol ${iconClass}">${icon}</div><div style="min-width:0"><strong title="${safeText(file.name)}">${safeText(file.name)}</strong><small>${safeText(file.className || "Unsorted")} · ${safeText(file.subject || "No subject")} · ${safeText(file.originalName || file.name)}</small></div></div>
       <div class="file-meta"><span class="type-tag">${type}</span></div>
       <div class="file-meta file-size">${formatSize(file.size)}</div>
       <div class="file-meta file-date">${formatDate(file.createdAt)}</div>
@@ -178,6 +185,9 @@ function renderFiles() {
   }).join("");
 }
 async function uploadOne(file) {
+  const className = $("uploadClass").value;
+  const subject = $("uploadSubject").value;
+  if (!CLASSES.includes(className) || !SUBJECTS.includes(subject)) throw new Error("Choose Class 9 or Class 10 and one subject before uploading.");
   if (!currentUser) throw new Error("Please sign in before uploading.");
   const ext = extension(file.name);
   if (!ALLOWED_EXTENSIONS.has(ext)) throw new Error(file.name + ": file type not supported.");
@@ -200,7 +210,7 @@ async function uploadOne(file) {
   if (!result.path || !result.publicUrl) throw new Error("Upload service returned an incomplete response.");
   $("progressPercent").textContent = "100%";
   $("progressBar").style.width = "100%";
-  await addDoc(collection(db, "schoolFiles"), { name: safeName, originalName: safeName, storagePath: result.path, downloadURL: result.publicUrl, size: file.size, contentType: file.type || "application/octet-stream", uploadedBy: currentUser.uid, createdAt: serverTimestamp() });
+  await addDoc(collection(db, "schoolFiles"), { name: safeName, originalName: safeName, storagePath: result.path, downloadURL: result.publicUrl, size: file.size, contentType: file.type || "application/octet-stream", uploadedBy: currentUser.uid, className, subject, createdAt: serverTimestamp() });
 }
 async function handleFiles(files) {
   if (!files?.length) return;
@@ -220,6 +230,20 @@ async function handleFiles(files) {
   }
   $("uploadProgress").hidden = true;
   $("fileInput").value = "";
+}
+function renderNotices() {
+  const list = $("noticeList");
+  if (!list) return;
+  const isAdmin = !!currentUser && currentUser.uid === ADMIN_FIREBASE_UID;
+  if (!allNotices.length) {
+    list.innerHTML = '<p class="notice-empty">No announcements yet.</p>';
+    return;
+  }
+  list.innerHTML = allNotices.map(notice => `
+    <article class="notice-card">
+      <div><strong>${safeText(notice.title || "Announcement")}</strong><p>${safeText(notice.message || "")}</p><small>${formatDate(notice.createdAt)}</small></div>
+      ${isAdmin ? `<button type="button" class="row-action" data-delete-notice="${safeText(notice.id)}" aria-label="Delete announcement">×</button>` : ""}
+    </article>`).join("");
 }
 function installAuthUI() {
   document.querySelector(".topbar").insertAdjacentHTML("afterend",
@@ -296,6 +320,8 @@ function connectFirebase() {
     installAuthUI();
     onAuthStateChanged(auth, user => {
       currentUser = user;
+      const isAdmin = !!user && user.uid === ADMIN_FIREBASE_UID;
+      $("postNoticeBtn").hidden = !isAdmin;
       const panel = $("authPanel");
       if (user) {
         panel.innerHTML = '<div class="auth-status">Signed in as <strong>' + safeText(user.displayName || user.email || user.phoneNumber || "Uploader") + '</strong><button class="auth-action" id="signOutBtn">Sign out</button></div>';
@@ -309,6 +335,11 @@ function connectFirebase() {
         $("showAuthBtn").addEventListener("click", () => { $("authForm").hidden = false; });
       }
     });
+    const noticesQuery = query(collection(db, "notices"), orderBy("createdAt", "desc"));
+    onSnapshot(noticesQuery, snapshot => {
+      allNotices = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+      renderNotices();
+    }, error => { console.error(error); toast("Could not load announcements."); });
     const filesQuery = query(collection(db, "schoolFiles"), orderBy("createdAt", "desc"));
     onSnapshot(filesQuery, snapshot => {
       allFiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -324,10 +355,31 @@ function connectFirebase() {
   }
 }
 
+$("postNoticeBtn").addEventListener("click", async () => {
+  if (!currentUser || currentUser.uid !== ADMIN_FIREBASE_UID) return toast("Admin access required.");
+  const title = window.prompt("Announcement title:");
+  if (title === null || !title.trim()) return;
+  const message = window.prompt("Announcement message:");
+  if (message === null || !message.trim()) return;
+  try {
+    await addDoc(collection(db, "notices"), { title: title.trim().slice(0,100), message: message.trim().slice(0,1000), postedBy: currentUser.uid, createdAt: serverTimestamp() });
+    toast("Announcement published.");
+  } catch (error) { console.error(error); toast("Could not publish announcement."); }
+});
+$("noticeList").addEventListener("click", async event => {
+  const button = event.target.closest("[data-delete-notice]");
+  if (!button) return;
+  if (!currentUser || currentUser.uid !== ADMIN_FIREBASE_UID) return toast("Admin access required.");
+  if (!window.confirm("Delete this announcement?")) return;
+  try { await deleteDoc(doc(db, "notices", button.dataset.deleteNotice)); toast("Announcement deleted."); }
+  catch (error) { console.error(error); toast("Could not delete announcement."); }
+});
 $("browseBtn").addEventListener("click", () => currentUser ? $("fileInput").click() : toast("Please sign in to upload."));
 $("uploadTopBtn").addEventListener("click", () => currentUser ? $("fileInput").click() : toast("Please sign in to upload."));
 $("fileInput").addEventListener("change", event => handleFiles(event.target.files));
 $("searchInput").addEventListener("input", renderFiles);
+$("classFilter").addEventListener("change", renderFiles);
+$("subjectFilter").addEventListener("change", renderFiles);
 $("sortSelect").addEventListener("change", renderFiles);
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
   document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
