@@ -57,7 +57,7 @@ Also publish the updated `firestore.rules` in Firebase Console → Firestore Dat
 ## 7. Rename files and administrator access
 The repository includes a `rename-file` Edge Function. It copies the object to a new Storage path, updates the Firestore metadata, then removes the old object. Deploy it with Verify JWT OFF, just like the other functions.
 
-Set `ADMIN_FIREBASE_UID` in Supabase Edge Function Secrets to the administrator's Firebase Authentication UID. Replace `SET_ADMIN_UID_HERE` in both `app.js` and `firestore.rules` with that same UID. Then publish `firestore.rules` in Firebase Console. The UID is an identifier, not a password; never put any service-role key in website code.
+Set `ADMIN_FIREBASE_UID` in Supabase Edge Function Secrets to the administrator's Firebase Authentication UID. Replace `PzIm63AR4yZg3yqB5RjecaJ5D4J2` in both `app.js` and `firestore.rules` with that same UID. Then publish `firestore.rules` in Firebase Console. The UID is an identifier, not a password; never put any service-role key in website code.
 
 The administrator will see Rename and Delete controls on every file. Other signed-in users can manage only files they uploaded. The Edge Functions independently check the administrator UID, so changing the browser-side value alone does not grant admin permissions.
 
@@ -66,3 +66,6 @@ Deploy:
 supabase functions deploy rename-file --no-verify-jwt
 supabase functions deploy delete-file --no-verify-jwt
 ```
+
+
+Admin Firebase Auth UID configured in the app and Firestore rules: `PzIm63AR4yZg3yqB5RjecaJ5D4J2`. Also add this exact value as the Supabase Edge Function secret named `ADMIN_FIREBASE_UID`.
