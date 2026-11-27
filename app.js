@@ -29,6 +29,8 @@ const toastEl = $("toast");
 let allFiles = [];
 let allNotices = [];
 let activeFilter = "all";
+let selectedLibraryClass = "";
+let selectedLibrarySubject = "";
 const CLASSES = ["Class 9", "Class 10"];
 const SUBJECTS = ["English", "Hindi", "Mathematics", "Science", "Social Science"];
 let db, auth, currentUser = null;
@@ -127,10 +129,41 @@ function closePreview() {
   $("previewBody").innerHTML = "";
   document.body.classList.remove("modal-open");
 }
+function renderFolderBrowser() {
+  const browser = $("folderBrowser");
+  const filesSection = $("filesSection");
+  if (!browser) return;
+  if (!selectedLibraryClass) {
+    browser.innerHTML = `
+      <div class="folder-browser-heading"><div><p class="eyebrow">BROWSE YOUR LIBRARY</p><h2>Select your class</h2><p>Choose a class to see its subject folders.</p></div></div>
+      <div class="folder-card-grid">
+        ${CLASSES.map(className => {
+          const count = allFiles.filter(file => file.className === className).length;
+          return `<button class="folder-card class-folder-card" type="button" data-class-folder="${safeText(className)}"><span class="folder-card-icon">▰</span><strong>${safeText(className)}</strong><small>${count} file${count === 1 ? "" : "s"}</small></button>`;
+        }).join("")}
+      </div>`;
+  } else if (!selectedLibrarySubject) {
+    browser.innerHTML = `
+      <div class="folder-browser-heading"><button class="folder-back-btn" type="button" data-folder-back="classes">← All classes</button><p class="eyebrow">SELECTED CLASS</p><h2>${safeText(selectedLibraryClass)} — Choose a subject</h2></div>
+      <div class="folder-card-grid subject-folder-grid">
+        ${SUBJECTS.map(subject => {
+          const count = allFiles.filter(file => file.className === selectedLibraryClass && file.subject === subject).length;
+          return `<button class="folder-card subject-folder-card" type="button" data-subject-folder="${safeText(subject)}"><span class="folder-card-icon">📁</span><strong>${safeText(subject)}</strong><small>${count} file${count === 1 ? "" : "s"}</small></button>`;
+        }).join("")}
+      </div>`;
+  } else {
+    browser.innerHTML = `
+      <div class="folder-browser-heading"><button class="folder-back-btn" type="button" data-folder-back="subjects">← ${safeText(selectedLibraryClass)} subjects</button><p class="eyebrow">OPEN FOLDER</p><h2>${safeText(selectedLibraryClass)} / ${safeText(selectedLibrarySubject)}</h2></div>`;
+  }
+  if (filesSection) filesSection.hidden = !selectedLibrarySubject;
+}
+
 function renderFiles() {
+  renderFolderBrowser();
+  if (!selectedLibrarySubject) return;
   const search = $("searchInput").value.trim().toLowerCase();
-  const selectedClass = $("classFilter")?.value || "all";
-  const selectedSubject = $("subjectFilter")?.value || "all";
+  const selectedClass = selectedLibraryClass || "all";
+  const selectedSubject = selectedLibrarySubject || "all";
   let shown = allFiles.filter(file => {
     if (selectedClass !== "all" && file.className !== selectedClass) return false;
     if (selectedSubject !== "all" && file.subject !== selectedSubject) return false;
@@ -154,7 +187,7 @@ function renderFiles() {
   $("totalDocs").textContent = allFiles.filter(f => ["PDF","DOC"].includes(category(f))).length;
   $("allCount").textContent = allFiles.length;
   $("favouriteCount").textContent = favouriteIds.size;
-  $("filesHeading").textContent = activeFilter === "all" ? "Recent files" : activeFilter === "FAVOURITES" ? "Favourite files" : `${activeFilter} files`;
+  $("filesHeading").textContent = selectedLibrarySubject ? `${selectedLibraryClass} / ${selectedLibrarySubject} files` : "Files";
   fileList.classList.toggle("grid-view", viewMode === "grid");
   fileList.parentElement.classList.toggle("grid-mode", viewMode === "grid");
 
@@ -340,6 +373,7 @@ function connectFirebase() {
       allNotices = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
       renderNotices();
     }, error => { console.error(error); toast("Could not load announcements."); });
+    renderFolderBrowser();
     const filesQuery = query(collection(db, "schoolFiles"), orderBy("createdAt", "desc"));
     onSnapshot(filesQuery, snapshot => {
       allFiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
