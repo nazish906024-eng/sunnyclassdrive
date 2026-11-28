@@ -396,16 +396,48 @@ function connectFirebase() {
   }
 }
 
-$("postNoticeBtn").addEventListener("click", async () => {
+function closeNoticeForm() {
+  $("noticeFormModal").hidden = true;
+  $("noticeForm").reset();
+  $("publishNoticeBtn").disabled = false;
+  $("publishNoticeBtn").textContent = "Publish Notice";
+  document.body.classList.remove("modal-open");
+}
+
+$("postNoticeBtn").addEventListener("click", () => {
   if (!currentUser || currentUser.uid !== ADMIN_FIREBASE_UID) return toast("Admin access required.");
-  const title = window.prompt("Announcement title:");
-  if (title === null || !title.trim()) return;
-  const message = window.prompt("Announcement message:");
-  if (message === null || !message.trim()) return;
+  $("noticeFormModal").hidden = false;
+  document.body.classList.add("modal-open");
+  $("noticeTitle").focus();
+});
+
+$("cancelNoticeBtn").addEventListener("click", closeNoticeForm);
+$("cancelNoticeBtnBottom").addEventListener("click", closeNoticeForm);
+$("noticeFormModal").addEventListener("click", event => {
+  if (event.target.matches("[data-close-notice]")) closeNoticeForm();
+});
+$("noticeForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!currentUser || currentUser.uid !== ADMIN_FIREBASE_UID) return toast("Admin access required.");
+  const title = $("noticeTitle").value.trim();
+  const message = $("noticeMessage").value.trim();
+  if (!title || !message) return toast("Enter both a title and message.");
+  const publishButton = $("publishNoticeBtn");
+  publishButton.disabled = true;
+  publishButton.textContent = "Publishing…";
   try {
-    await addDoc(collection(db, "notices"), { title: title.trim().slice(0,100), message: message.trim().slice(0,1000), postedBy: currentUser.uid, createdAt: serverTimestamp() });
+    await addDoc(collection(db, "notices"), { title: title.slice(0,100), message: message.slice(0,1000), postedBy: currentUser.uid, createdAt: serverTimestamp() });
+    closeNoticeForm();
     toast("Announcement published.");
-  } catch (error) { console.error(error); toast("Could not publish announcement."); }
+  } catch (error) {
+    console.error(error);
+    toast("Could not publish announcement.");
+    publishButton.disabled = false;
+    publishButton.textContent = "Publish Notice";
+  }
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !$("noticeFormModal").hidden) closeNoticeForm();
 });
 $("noticeList").addEventListener("click", async event => {
   const button = event.target.closest("[data-delete-notice]");
