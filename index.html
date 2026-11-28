@@ -74,25 +74,29 @@
           <article class="stat-card"><div class="stat-icon green">▤</div><div><p>Documents</p><strong id="totalDocs">—</strong></div><span class="stat-caption">PDF / DOC / DOCX</span></article>
         </section>
 
-        <section class="upload-panel" id="dropZone">
-          <div class="upload-illustration">☁<span>↑</span></div>
-          <div class="upload-copy">
-            <div class="folder-selects">
-              <label>Class
+        <input type="file" id="fileInput" multiple hidden accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.webp" />
+        <div class="upload-options-modal" id="uploadOptionsModal" hidden role="dialog" aria-modal="true" aria-labelledby="uploadOptionsTitle">
+          <div class="upload-options-backdrop" data-close-upload></div>
+          <section class="upload-options-dialog">
+            <header class="upload-options-header">
+              <div><p class="eyebrow">ADD TO YOUR SCHOOL LIBRARY</p><h2 id="uploadOptionsTitle">Upload files</h2></div>
+              <button class="preview-close" type="button" id="closeUploadOptions" aria-label="Close upload options">×</button>
+            </header>
+            <div class="upload-options-body">
+              <label>Choose Class
                 <select id="uploadClass" required><option value="">Choose class</option><option>Class 9</option><option>Class 10</option></select>
               </label>
-              <label>Subject
+              <label>Choose Subject
                 <select id="uploadSubject" required><option value="">Choose subject</option><option>English</option><option>Hindi</option><option>Mathematics</option><option>Science</option><option>Social Science</option></select>
               </label>
+              <p>Maximum 25 MB per file. Supported: PDF, PPT, DOC, Excel, TXT and images.</p>
+              <div class="upload-options-actions">
+                <button class="secondary-btn" type="button" id="cancelUploadOptions">Cancel</button>
+                <button class="primary-btn" type="button" id="chooseUploadFiles">Choose files</button>
+              </div>
             </div>
-            <h2>Drop files here to share</h2>
-            <p>or choose files from your device. Maximum 25 MB per file.</p>
-            <div class="upload-hints"><span>PDF</span><span>PPT / PPTX</span><span>DOC / DOCX</span><span>Images</span></div>
-          </div>
-          <button class="secondary-btn" id="browseBtn">Browse files</button>
-          <input type="file" id="fileInput" multiple hidden
-            accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.webp" />
-        </section>
+          </section>
+        </div>
 
         <section class="folder-browser" id="folderBrowser"></section>
 
