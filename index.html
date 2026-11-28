@@ -137,6 +137,25 @@
         <footer class="preview-actions"><a class="secondary-btn" id="previewOpen" target="_blank" rel="noopener">Open in new tab</a><a class="primary-btn" id="previewDownload" target="_blank" rel="noopener">Download file</a></footer>
       </section>
     </div>
+    <div class="notice-form-modal" id="noticeFormModal" hidden role="dialog" aria-modal="true" aria-labelledby="noticeFormTitle">
+      <div class="notice-form-backdrop" data-close-notice></div>
+      <section class="notice-form-dialog">
+        <header class="notice-form-header">
+          <div><p class="eyebrow">SCHOOL UPDATES</p><h2 id="noticeFormTitle">Post a notice</h2></div>
+          <button class="preview-close" type="button" id="cancelNoticeBtn" aria-label="Close notice form">×</button>
+        </header>
+        <form id="noticeForm" class="notice-form">
+          <label for="noticeTitle">Notice Title</label>
+          <input id="noticeTitle" name="title" type="text" maxlength="100" required placeholder="Enter notice title" />
+          <label for="noticeMessage">Notice Message</label>
+          <textarea id="noticeMessage" name="message" maxlength="1000" rows="6" required placeholder="Write your announcement here"></textarea>
+          <div class="notice-form-actions">
+            <button class="secondary-btn" type="button" id="cancelNoticeBtnBottom">Cancel</button>
+            <button class="primary-btn" type="submit" id="publishNoticeBtn">Publish Notice</button>
+          </div>
+        </form>
+      </section>
+    </div>
     <div class="toast" id="toast" role="status"></div>
     <div class="upload-progress" id="uploadProgress" hidden>
       <div class="progress-head"><strong id="progressTitle">Uploading files</strong><span id="progressPercent">0%</span></div>
