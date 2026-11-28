@@ -365,12 +365,10 @@ function connectFirebase() {
       const panel = $("authPanel");
       if (user) {
         panel.innerHTML = '<div class="auth-status">Signed in as <strong>' + safeText(user.displayName || user.email || user.phoneNumber || "Uploader") + '</strong><button class="auth-action" id="signOutBtn">Sign out</button></div>';
-        $("dropZone").hidden = false;
         $("uploadTopBtn").hidden = false;
         $("signOutBtn").addEventListener("click", () => signOut(auth).catch(error => toast(error.message)));
       } else {
         panel.innerHTML = '<div class="auth-status">Sign in to upload. Anyone can browse and download.<button class="auth-action" id="showAuthBtn">Sign in / Register</button></div>';
-        $("dropZone").hidden = true;
         $("uploadTopBtn").hidden = true;
         $("showAuthBtn").addEventListener("click", () => { $("authForm").hidden = false; });
       }
@@ -447,19 +445,33 @@ $("noticeList").addEventListener("click", async event => {
   try { await deleteDoc(doc(db, "notices", button.dataset.deleteNotice)); toast("Announcement deleted."); }
   catch (error) { console.error(error); toast("Could not delete announcement."); }
 });
-$("browseBtn").addEventListener("click", () => {
+function closeUploadOptions() {
+  $("uploadOptionsModal").hidden = true;
+  document.body.classList.remove("modal-open");
+}
+$("uploadTopBtn").addEventListener("click", () => {
   if (!currentUser) return toast("Please sign in to upload.");
+  $("uploadOptionsModal").hidden = false;
+  document.body.classList.add("modal-open");
+  $("uploadClass").focus();
+});
+$("closeUploadOptions").addEventListener("click", closeUploadOptions);
+$("cancelUploadOptions").addEventListener("click", closeUploadOptions);
+$("uploadOptionsModal").addEventListener("click", event => {
+  if (event.target.matches("[data-close-upload]")) closeUploadOptions();
+});
+$("chooseUploadFiles").addEventListener("click", () => {
   if (!CLASSES.includes($("uploadClass").value)) return toast("Please choose Class 9 or Class 10 first.");
   if (!SUBJECTS.includes($("uploadSubject").value)) return toast("Please choose a subject first.");
   $("fileInput").click();
 });
-$("uploadTopBtn").addEventListener("click", () => {
-  if (!currentUser) return toast("Please sign in to upload.");
-  $("dropZone").scrollIntoView({ behavior: "smooth", block: "center" });
-  $("uploadClass").focus();
-  toast("Choose a class and subject, then click Browse files.");
+$("fileInput").addEventListener("change", event => {
+  if (event.target.files?.length) closeUploadOptions();
+  handleFiles(event.target.files);
 });
-$("fileInput").addEventListener("change", event => handleFiles(event.target.files));
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !$("uploadOptionsModal").hidden) closeUploadOptions();
+});
 $("searchInput").addEventListener("input", renderFiles);
 $("sortSelect").addEventListener("change", renderFiles);
 $("folderBrowser").addEventListener("click", event => {
@@ -580,14 +592,7 @@ $("viewToggle").addEventListener("click", () => {
   $("viewToggle").setAttribute("aria-label", viewMode === "list" ? "Switch to grid view" : "Switch to list view");
   renderFiles();
 });
-const dropZone = $("dropZone");
-["dragenter","dragover"].forEach(name => dropZone.addEventListener(name, event => {
-  event.preventDefault(); dropZone.classList.add("dragover");
-}));
-["dragleave","drop"].forEach(name => dropZone.addEventListener(name, event => {
-  event.preventDefault(); dropZone.classList.remove("dragover");
-}));
-dropZone.addEventListener("drop", event => handleFiles(event.dataTransfer.files));
+// Uploads are started from the top Upload files button and its class/subject options modal.
 $("mobileMenu").addEventListener("click", () => $("sidebar").classList.toggle("open"));
 const yearElement = $("year");
 if (yearElement) yearElement.textContent = new Date().getFullYear();
