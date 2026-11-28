@@ -197,3 +197,33 @@ body.modal-open{overflow:hidden}
 .profile-action-btn:hover{transform:translateY(-2px);filter:brightness(1.12);border-color:#65b4ff}
 .profile-contact-btn{background:linear-gradient(110deg,#183c45,#17344a);border-color:#2d6570}
 
+
+
+/* Keep all three footer actions visually identical in size and shape. */
+.footer-simple{display:flex;flex-direction:column;align-items:center}
+.footer-simple .footer-contact,
+.footer-simple .profile-actions .profile-action-btn{
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:min(360px,100%);
+  min-height:46px;
+  padding:12px 18px;
+  border:1px solid #365475;
+  border-radius:11px;
+  background:linear-gradient(110deg,#1c304b,#172840);
+  color:#eaf4ff;
+  text-decoration:none;
+  font:700 13px "DM Sans",sans-serif;
+  letter-spacing:normal;
+  line-height:20px;
+}
+.footer-simple .footer-contact{margin:0}
+.footer-simple .profile-actions{width:min(360px,100%);max-width:360px;margin:11px auto 12px;padding:0}
+.footer-simple .profile-actions .profile-contact-btn{background:linear-gradient(110deg,#183c45,#17344a);border-color:#2d6570}
+.footer-simple .footer-contact:hover,
+.footer-simple .profile-actions .profile-action-btn:hover{transform:translateY(-2px);filter:brightness(1.12);border-color:#65b4ff}
+@media(max-width:480px){
+  .footer-simple{padding-left:16px;padding-right:16px}
+}
