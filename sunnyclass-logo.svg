@@ -19,5 +19,5 @@
 <path d="M239 133Q490 157 738 132" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
 <text x="240" y="185" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing=".6" fill="#173d78">UPLOAD AT HOME</text>
 <circle cx="503" cy="175" r="5" fill="#f28a00"/>
-<text x="523" y="185" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing=".4" fill="#f28a00">LEARN IN SCHOOL</text>
+<text x="495" y="185" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing=".4" fill="#f28a00">LEARN IN SCHOOL</text>
 </svg>
